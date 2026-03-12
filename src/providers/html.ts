@@ -1,19 +1,26 @@
 import { readFile } from "node:fs/promises";
 import type { NormalizedDocument, Section } from "../core/types";
 
+const HTML_ENTITIES: Record<string, string> = {
+  nbsp: " ",
+  amp: "&",
+  quot: '"',
+  apos: "'",
+  lt: "<",
+  gt: ">",
+};
+
+function decodeEntities(text: string): string {
+  return text.replace(/&([a-zA-Z]+|#\d+|#x[\da-fA-F]+);/g, (match, ref: string) => {
+    if (ref.startsWith("#x")) return String.fromCharCode(parseInt(ref.slice(2), 16));
+    if (ref.startsWith("#")) return String.fromCharCode(parseInt(ref.slice(1), 10));
+    return HTML_ENTITIES[ref.toLowerCase()] ?? match;
+  });
+}
+
 function stripHtml(html: string): string {
-  return html
-    .replace(/<script\b[\s\S]*?<\/script[^>]*>/gi, "")
-    .replace(/<style\b[\s\S]*?<\/style[^>]*>/gi, "")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, "&")
-    .replace(/\s+/g, " ")
-    .trim();
+  const noTags = html.replace(/<[^>]+>/g, " ");
+  return decodeEntities(noTags).replace(/\s+/g, " ").trim();
 }
 
 function extractTitle(html: string): string {

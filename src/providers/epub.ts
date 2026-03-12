@@ -76,14 +76,14 @@ async function parseEpub(filePath: string): Promise<{ title: string; sections: S
       const chapterTitle = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() ||
                            html.match(/<h[1-3][^>]*>([^<]+)<\/h[1-3]>/i)?.[1]?.trim();
       
-      const text = html
-        .replace(/<script\b[\s\S]*?<\/script[^>]*>/gi, "")
-        .replace(/<style\b[\s\S]*?<\/style[^>]*>/gi, "")
-        .replace(/<[^>]+>/g, " ")
-        .replace(/&nbsp;/g, " ")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&amp;/g, "&")
+      const htmlEntities: Record<string, string> = { nbsp: " ", amp: "&", quot: '"', apos: "'", lt: "<", gt: ">" };
+      const noTags = html.replace(/<[^>]+>/g, " ");
+      const text = noTags
+        .replace(/&([a-zA-Z]+|#\d+|#x[\da-fA-F]+);/g, (match, ref: string) => {
+          if (ref.startsWith("#x")) return String.fromCharCode(parseInt(ref.slice(2), 16));
+          if (ref.startsWith("#")) return String.fromCharCode(parseInt(ref.slice(1), 10));
+          return htmlEntities[ref.toLowerCase()] ?? match;
+        })
         .replace(/\s+/g, " ")
         .trim();
       

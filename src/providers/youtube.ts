@@ -83,13 +83,14 @@ class DefaultYouTubeBackend implements YouTubeTranscriptBackend {
       const textRe = /<text[^>]*>([\s\S]*?)<\/text>/g;
       let m: RegExpExecArray | null;
       while ((m = textRe.exec(xml)) !== null) {
+        // YouTube timedtext content is plain text with XML entities — decode entities only
+        const xmlEntities: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
         const decoded = m[1]
-          .replace(/&lt;/g, "<")
-          .replace(/&gt;/g, ">")
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          .replace(/&amp;/g, "&")
-          .replace(/<[^>]+>/g, "")
+          .replace(/&([a-zA-Z]+|#\d+|#x[\da-fA-F]+);/g, (match, ref: string) => {
+            if (ref.startsWith("#x")) return String.fromCharCode(parseInt(ref.slice(2), 16));
+            if (ref.startsWith("#")) return String.fromCharCode(parseInt(ref.slice(1), 10));
+            return xmlEntities[ref.toLowerCase()] ?? match;
+          })
           .trim();
         if (decoded) textParts.push(decoded);
       }
