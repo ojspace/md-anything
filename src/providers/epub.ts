@@ -64,6 +64,7 @@ async function parseEpub(filePath: string): Promise<{ title: string; sections: S
     const opfDir = opfPath ? opfPath.replace(/[^/]+$/, "") : "";
 
     const sections: Section[] = [];
+    // Limit to 20 spine items to avoid excessive processing for very large EPUBs
     for (const item of spineItems.slice(0, 20)) {
       const fullPath = opfDir ? `${opfDir}${item}` : item;
       const xhtmlResult = spawnSync("unzip", ["-p", filePath, fullPath], { encoding: "utf-8" });

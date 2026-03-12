@@ -1,6 +1,8 @@
 import type { NormalizedDocument } from "../core/types";
 
 function extractVideoId(url: string): string | null {
+  // YouTube video IDs are always exactly 11 alphanumeric/dash/underscore chars.
+  // The negative lookahead prevents matching the first 11 chars of a longer string.
   const patterns = [
     /[?&]v=([a-zA-Z0-9_-]{11})(?![a-zA-Z0-9_-])/,
     /youtu\.be\/([a-zA-Z0-9_-]{11})(?![a-zA-Z0-9_-])/,

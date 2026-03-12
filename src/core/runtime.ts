@@ -31,7 +31,8 @@ export function detectCapabilities(): RuntimeCapabilities {
     hasWhisper: checkBinary("whisper"),
     hasPlaywright: (() => {
       try {
-        // In Bun, use a try/catch with dynamic import check
+        // require.resolve works in Bun for checking if a package is installed
+        // without actually importing it. Returns false if not found.
         require.resolve("playwright");
         return true;
       } catch {

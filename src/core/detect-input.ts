@@ -35,12 +35,7 @@ export function detectInputKind(input: string): InputKind {
 
   // Try to detect from content if file exists
   if (existsSync(input)) {
-    try {
-      const _first = Bun.file(input).slice(0, 200);
-      return "text";
-    } catch {
-      // ignore
-    }
+    return "text";
   }
 
   return "unknown";
