@@ -7,8 +7,8 @@ export interface FormatOptions {
 function buildFrontmatter(doc: NormalizedDocument): string {
   const lines = [
     "---",
-    `title: "${doc.title.replace(/"/g, '\\"')}"`,
-    `source: "${doc.source.replace(/"/g, '\\"')}"`,
+    `title: "${doc.title.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`,
+    `source: "${doc.source.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`,
     `source_type: ${doc.sourceType}`,
   ];
 

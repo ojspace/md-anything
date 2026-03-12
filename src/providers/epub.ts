@@ -77,13 +77,13 @@ async function parseEpub(filePath: string): Promise<{ title: string; sections: S
                            html.match(/<h[1-3][^>]*>([^<]+)<\/h[1-3]>/i)?.[1]?.trim();
       
       const text = html
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+        .replace(/<script\b[\s\S]*?<\/script[^>]*>/gi, "")
+        .replace(/<style\b[\s\S]*?<\/style[^>]*>/gi, "")
         .replace(/<[^>]+>/g, " ")
         .replace(/&nbsp;/g, " ")
-        .replace(/&amp;/g, "&")
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">")
+        .replace(/&amp;/g, "&")
         .replace(/\s+/g, " ")
         .trim();
       
