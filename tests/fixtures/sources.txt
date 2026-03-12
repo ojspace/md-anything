@@ -1,0 +1,3 @@
+# sources manifest test file
+tests/fixtures/sample.txt
+tests/fixtures/sample.md

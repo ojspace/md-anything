@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+*.local
+tests/generated-fixtures/
+coverage/
+.DS_Store

@@ -1,0 +1,83 @@
+import { stat } from "node:fs/promises";
+import { basename } from "node:path";
+import { execSync } from "node:child_process";
+import type { NormalizedDocument } from "../core/types";
+
+function checkTesseract(): boolean {
+  try {
+    execSync("which tesseract", { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function runTesseract(filePath: string): Promise<string | null> {
+  try {
+    const { execSync: exec } = await import("node:child_process");
+    const result = exec(`tesseract "${filePath}" stdout 2>/dev/null`, {
+      encoding: "utf-8",
+      timeout: 30000,
+    });
+    return result.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function convertImage(filePath: string): Promise<NormalizedDocument> {
+  const name = basename(filePath);
+  let fileSize = 0;
+
+  try {
+    const s = await stat(filePath);
+    fileSize = s.size;
+  } catch {
+    // ignore
+  }
+
+  const hasTesseract = checkTesseract();
+  let ocrText: string | null = null;
+  let extractionMode = "metadata-only";
+  let extractionStatus = "weak";
+
+  if (hasTesseract) {
+    ocrText = await runTesseract(filePath);
+    if (ocrText && ocrText.length > 10) {
+      extractionMode = "ocr";
+      extractionStatus = "ok";
+    } else {
+      extractionMode = "ocr-empty";
+      extractionStatus = "weak";
+    }
+  }
+
+  const sections = [];
+
+  if (ocrText && ocrText.length > 10) {
+    sections.push({
+      heading: "Extracted Text (OCR)",
+      content: ocrText,
+    });
+  } else {
+    sections.push({
+      heading: "Image",
+      content: `![${name}](${filePath})\n\n*No text content extracted.*${hasTesseract ? " OCR found no text." : " Install tesseract for OCR support."}`,
+    });
+  }
+
+  return {
+    title: name,
+    source: filePath,
+    sourceType: "image",
+    sections,
+    metadata: {
+      extraction: extractionMode,
+      extraction_status: extractionStatus,
+      file_name: name,
+      file_size_bytes: fileSize,
+      ocr_available: hasTesseract,
+      ocr_text_length: ocrText?.length ?? 0,
+    },
+  };
+}

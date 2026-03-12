@@ -1,0 +1,23 @@
+{
+  "name": "md-anything",
+  "version": "0.1.0",
+  "description": "Convert anything to graph-enriched Markdown",
+  "type": "module",
+  "bin": {
+    "md-anything": "./src/cli.ts"
+  },
+  "scripts": {
+    "dev": "bun run src/cli.ts",
+    "test": "bun test",
+    "test:required": "bun test tests/unit tests/integration/convert-text.test.ts tests/integration/convert-image.test.ts tests/integration/ingest-source-manifest.test.ts tests/integration/youtube-fallback.test.ts",
+    "test:fixtures": "bun run scripts/bootstrap-fixtures.ts",
+    "doctor": "bun run src/cli.ts doctor",
+    "lint": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
