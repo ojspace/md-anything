@@ -14,8 +14,7 @@ function checkPdftotext(): boolean {
 
 async function runPdftotext(filePath: string): Promise<string | null> {
   try {
-    const { execSync: exec } = await import("node:child_process");
-    const result = exec(`pdftotext "${filePath}" - 2>/dev/null`, {
+    const result = execSync(`pdftotext "${filePath}" - 2>/dev/null`, {
       encoding: "utf-8",
       timeout: 30000,
     });
