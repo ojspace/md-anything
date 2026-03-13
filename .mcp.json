@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "md-anything": {
+      "command": "bunx",
+      "args": ["md-anything-mcp"]
+    }
+  }
+}

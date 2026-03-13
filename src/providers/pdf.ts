@@ -3,15 +3,6 @@ import { basename } from "node:path";
 import { execSync } from "node:child_process";
 import type { NormalizedDocument } from "../core/types";
 
-function checkPdftotext(): boolean {
-  try {
-    execSync("which pdftotext", { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 async function runPdftotext(filePath: string): Promise<string | null> {
   try {
     const result = execSync(`pdftotext "${filePath}" - 2>/dev/null`, {
@@ -24,7 +15,7 @@ async function runPdftotext(filePath: string): Promise<string | null> {
   }
 }
 
-export async function convertPdf(filePath: string): Promise<NormalizedDocument> {
+export async function convertPdf(filePath: string, hasPdftotext = false): Promise<NormalizedDocument> {
   const name = basename(filePath);
   let fileSize = 0;
 
@@ -34,8 +25,6 @@ export async function convertPdf(filePath: string): Promise<NormalizedDocument> 
   } catch {
     // ignore
   }
-
-  const hasPdftotext = checkPdftotext();
   let text: string | null = null;
   let extractionMode = "unavailable";
   let extractionStatus = "weak";

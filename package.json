@@ -1,20 +1,55 @@
 {
   "name": "md-anything",
   "version": "0.1.0",
-  "description": "Convert anything to graph-enriched Markdown",
+  "description": "Convert anything to Markdown — CLI, MCP server, and HTTP API",
   "type": "module",
+  "keywords": [
+    "markdown",
+    "converter",
+    "pdf",
+    "epub",
+    "youtube",
+    "ocr",
+    "mcp",
+    "cli",
+    "bun"
+  ],
+  "homepage": "https://github.com/ojspace/md-anything",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ojspace/md-anything.git"
+  },
+  "license": "MIT",
+  "files": [
+    "dist/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
   "bin": {
-    "md-anything": "./src/cli.ts"
+    "md-anything": "./src/cli.ts",
+    "md-anything-mcp": "./src/mcp.ts",
+    "md-anything-server": "./src/server.ts"
+  },
+  "exports": {
+    ".": "./src/core/convert.ts"
   },
   "scripts": {
     "dev": "bun run src/cli.ts",
+    "server": "bun run src/server.ts",
+    "mcp": "bun run src/mcp.ts",
+    "build": "bun build src/cli.ts src/mcp.ts src/server.ts --outdir dist --target bun",
+    "prepublishOnly": "bun run lint && bun run test:required",
     "test": "bun test",
     "test:required": "bun test tests/unit tests/integration/convert-text.test.ts tests/integration/convert-image.test.ts tests/integration/ingest-source-manifest.test.ts tests/integration/youtube-fallback.test.ts",
+    "test:live": "LIVE_TESTS=1 bun test tests/integration/youtube-live.test.ts tests/integration/url-live.test.ts",
     "test:fixtures": "bun run scripts/bootstrap-fixtures.ts",
     "doctor": "bun run src/cli.ts doctor",
     "lint": "bunx tsc --noEmit"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "hono": "^4.12.7",
     "zod": "^3.22.4"
   },
   "devDependencies": {
