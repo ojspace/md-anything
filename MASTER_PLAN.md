@@ -58,16 +58,16 @@
 
 ## Release Quality Gates (before docs)
 
-- [ ] `bun run test:required` passes on a fresh clone
-- [ ] `bun run test:fixtures && bun run test` passes when tools available
-- [ ] `bun run doctor` output is accurate for detected capabilities
-- [ ] Sample PNG image produces valid Markdown output
-- [ ] Generated PDF/EPUB produce valid output (strong when tools available, fallback otherwise)
-- [ ] Source manifest ingest tested end-to-end
+- [x] `bun run test:required` passes on a fresh clone
+- [x] `bun run test:fixtures && bun run test` passes when tools available
+- [x] `bun run doctor` output is accurate for detected capabilities
+- [x] Sample PNG image produces valid Markdown output
+- [x] Generated PDF/EPUB produce valid output (strong when tools available, fallback otherwise)
+- [x] Source manifest ingest tested end-to-end
 - [ ] YouTube fallback validated with real URL regression target
 - [ ] CNN URL validated as url-kind with fallback structure
-- [ ] All input types carry support_level and usefulness_score in metadata
-- [ ] No hard failures for any supported input kind
+- [x] All input types carry support_level and usefulness_score in metadata
+- [x] No hard failures for any supported input kind
 
 ## Current Remaining Work
 
@@ -82,8 +82,8 @@
 - [x] Required test suite
 - [ ] Live YouTube transcript regression (real URL: EqhKw0Oro_k)
 - [ ] Live CNN URL regression
-- [ ] CI workflow
-- [ ] README / docs (after quality gates pass)
+- [x] CI workflow
+- [x] README / docs (after quality gates pass)
 
 ## Definition of Done (v1)
 

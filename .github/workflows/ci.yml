@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    name: Lint & Required Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Lint (TypeScript)
+        run: bun run lint
+
+      - name: Run required tests
+        run: bun run test:required
+
+  optional-tests:
+    name: Optional Tests (tool-gated)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Install optional tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y unzip poppler-utils tesseract-ocr
+
+      - name: Bootstrap generated fixtures
+        run: bun run test:fixtures
+
+      - name: Run full test suite
+        run: bun test
