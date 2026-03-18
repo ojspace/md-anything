@@ -1,10 +1,36 @@
 # md-anything
 
-Convert anything to Markdown — files, URLs, YouTube videos, PDFs, EPUBs, images, and more.
+Local-first Markdown conversion for files, webpages, and media.
 
 Available as a **CLI**, an **MCP server** (for Claude, Cursor, and other AI tools), and an **HTTP API**.
 
-[![CI](https://github.com/ojspace/md-anything/actions/workflows/ci.yml/badge.svg)](https://github.com/ojspace/md-anything/actions/workflows/ci.yml)
+[![CI](https://github.com/ojspace/md-anything/actions/workflows/ci.yml/badge.svg)](https://github.com/ojspace/md-anything/actions/workflows/ci.yml) ![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)
+
+---
+
+`md-anything` gives you a single, consistent interface for turning source material into usable Markdown.
+
+It is built for:
+
+- research and reading workflows
+- AI agent pipelines
+- documentation capture and offline use
+- ingesting mixed-source folders into Markdown notes
+
+### Highlights
+
+- one command surface for files, webpages, and media
+- strong support for text, markdown, JSON, HTML, URLs, and PDFs
+- agent-ready interfaces: CLI, MCP, and machine-readable `--json`
+- lightweight by default with optional OCR and media upgrades
+- honest fallback behavior instead of silent failure
+
+### Product principles
+
+- **local-first** for the core workflow
+- **lightweight by default** with optional upgrades
+- **graceful under failure** with honest fallback output and metadata
+- **automation-friendly** with a stable Markdown and JSON contract
 
 ---
 
@@ -23,18 +49,20 @@ If a result is weak, md-anything tells you why in the output metadata and extrac
 
 ---
 
-## Why I built this
+## Why md-anything
 
-I run AI agent workflows in [Claude Code](https://claude.ai/code) and [OpenClaw](https://openclaw.dev). The agents need to read things — PDFs, docs pages, YouTube talks, EPUB books, audio notes. Every format is a different API, a different failure mode, a different stub to write.
+Modern research and agent workflows keep running into the same problem:
 
-I needed one reliable primitive: give it anything, get back clean Markdown. Something local-first with no cloud dependency, that works offline for files, and never hard-crashes — if extraction is weak, it returns a useful stub with honest metadata instead of throwing.
+**source material is everywhere, but usable Markdown is not.**
 
-I built it to make my own agent pipelines faster and more reliable. Once it was solid enough, I open-sourced it — the same problem shows up in every serious agent workflow.
+Every format tends to come with its own parser, its own edge cases, and its own failure modes. `md-anything` standardizes that behind one interface and one output shape so the rest of your workflow stays simple.
 
-**The philosophy in three lines:**
-- Local-first — no cloud APIs for core functionality, your files stay on your machine
-- Graceful over correct — a useful stub beats a crash, every time
-- Honest output — metadata tells you exactly how the extraction went and how much to trust it
+In practice, that means:
+
+- fewer one-off scripts
+- clearer automation paths
+- better defaults for mixed-content workflows
+- easier integration with agents and local tools
 
 ---
 
@@ -52,8 +80,8 @@ I built it to make my own agent pipelines faster and more reliable. Once it was 
 | `.pdf` | ✅ Strong | unpdf zero-dep extraction; pdftotext fallback; OCR hint |
 | `.epub` | 🟡 Best-effort | Native ZIP extraction; spine-aware |
 | `.mobi` / `.azw` | 🟡 Best-effort | Requires Calibre `ebook-convert` |
-| Audio (`.mp3`, `.wav`, etc.) | 🔶 Optional | Requires OpenAI Whisper |
-| Video (`.mp4`, `.mov`, etc.) | 🔶 Optional | Requires OpenAI Whisper + ffmpeg |
+| Audio (`.mp3`, `.wav`, etc.) | 🔶 Optional | Local `whisper-cpp` or opt-in OpenRouter fallback |
+| Video (`.mp4`, `.mov`, etc.) | 🔶 Optional | Local `whisper-cpp` + `ffmpeg`, or opt-in OpenRouter fallback |
 
 **Design principles:**
 - Local-first — no cloud APIs needed for core functionality
@@ -66,8 +94,20 @@ I built it to make my own agent pipelines faster and more reliable. Once it was 
 
 - **Works best today:** text, markdown, JSON, HTML, normal web pages, and most PDFs
 - **Best-effort by design:** YouTube, images, EPUB, and MOBI
-- **Optional-tool upgrades:** `tesseract`, `pdftotext`, `ebook-convert`, and `whisper` improve some formats but are not required for the default workflow
+- **Optional local upgrades:** `tesseract`, `pdftotext`, `ebook-convert`, `whisper-cpp`, and `ffmpeg` improve some formats but are not required for the default workflow
+- **Optional remote fallback:** `OPENROUTER_API_KEY` can improve image/audio/video extraction, but it is opt-in and not part of the core path
 - **Weak outputs stay honest:** low-confidence results include extraction notes and metadata so you can decide whether to trust, retry, or install optional tools
+
+## Lightweight by default
+
+`md-anything` is intentionally useful without turning into a heavyweight AI setup project:
+
+- the core install works with zero extra native tools
+- no local models are bundled into the package
+- richer OCR and transcription are optional upgrades
+- remote AI fallbacks are opt-in via environment variables, not required
+
+That means researchers, AI hobbyists, and agent users can start with the lightweight path and only add heavier capabilities when they actually need them.
 
 ---
 
@@ -281,6 +321,16 @@ md-anything is intentionally compatible with skill-driven ecosystems that rely o
 - local, dependency-light execution
 
 That means it is already well-positioned for ClawHub/OpenClaw-style discovery and invocation without needing a separate product fork.
+
+### Capability layers
+
+There are three intended usage modes:
+
+- **Lightweight mode:** install nothing extra and use the strong core formats
+- **Local privacy mode:** add local tools like `tesseract`, `pdftotext`, `whisper-cpp`, and `ffmpeg`
+- **Remote convenience mode:** set `OPENROUTER_API_KEY` for optional image/audio/video fallbacks
+
+The default product philosophy is still local-first. Remote fallbacks should never become a hidden requirement for the main tool.
 
 ---
 
@@ -506,6 +556,21 @@ New formats should plug into the existing flow instead of inventing a parallel p
 
 This keeps Phase 2 work like Vimeo support and richer structured extraction additive instead of architectural.
 
+### Media-family roadmap
+
+For media sources like Vimeo, the intended direction is:
+
+1. detect the media URL subtype
+2. reuse shared media extraction/transcript logic where possible
+3. return the same `NormalizedDocument` shape with honest metadata
+4. degrade to a useful fallback stub when transcripts or audio are unavailable
+
+That keeps new providers additive instead of platform-specific rewrites.
+
+### Structured extraction groundwork
+
+Internally, sections can carry lightweight semantic hints such as transcript, OCR, or fallback content. The public contract stays Markdown-first, while future structured extraction can build on those hints without breaking current users.
+
 ---
 
 ## Personal usage guide
@@ -547,7 +612,7 @@ mda convert "https://hono.dev/docs/getting-started/basic" -o /tmp/hono-basics.md
 ### Transcribe a voice note or meeting recording
 
 ```bash
-# Requires: brew install whisper-cpp ffmpeg (then: whisper-cpp --download-model base.en)
+# Optional local upgrade: brew install whisper-cpp ffmpeg (then: whisper-cpp --download-model base.en)
 mda convert ~/recordings/standup-2026-03-13.mp3 -o standup.md
 mda convert ~/recordings/investor-call.mp4 -o investor-call.md
 ```
@@ -567,7 +632,7 @@ Once `.mcp.json` is in your project root, Claude can convert files directly:
 
 Claude calls `convert`, gets the Markdown, and uses it in context — without you leaving the chat.
 
-### Set up optional tools once, get better results forever
+### Set up optional tools only if you need them
 
 ```bash
 brew install poppler tesseract ffmpeg whisper-cpp
@@ -575,7 +640,7 @@ whisper-cpp --download-model base.en
 mda doctor  # verify everything is detected
 ```
 
-After this, PDFs extract real text instead of stubs, images get OCR'd, and audio/video get transcribed.
+After this, PDFs extract more text, images get local OCR, and audio/video can be transcribed locally. The base install still works without these tools.
 
 ---
 

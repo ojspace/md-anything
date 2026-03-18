@@ -1,7 +1,7 @@
 {
   "name": "md-anything",
   "version": "0.2.0",
-  "description": "Convert anything to Markdown — CLI, MCP server, and HTTP API",
+  "description": "Local-first Markdown conversion for files, webpages, and media — CLI, MCP, and HTTP API",
   "type": "module",
   "keywords": [
     "markdown",

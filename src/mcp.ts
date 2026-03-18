@@ -70,7 +70,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: "doctor",
       description:
-        "Report available capabilities: which optional tools (tesseract, pdftotext, ebook-convert, whisper) are installed and what input types are supported.",
+        "Report lightweight core support plus optional local and remote capability upgrades such as tesseract, pdftotext, whisper-cpp, ffmpeg, and OPENROUTER_API_KEY.",
       inputSchema: {
         type: "object" as const,
         properties: {},

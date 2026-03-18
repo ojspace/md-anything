@@ -4,6 +4,7 @@ import { execSync } from "node:child_process";
 import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import type { NormalizedDocument } from "../core/types";
+import { transcribeAudioWithHealer } from "./openrouter-client";
 
 function hasFfmpeg(): boolean {
   try {
@@ -14,19 +15,27 @@ function hasFfmpeg(): boolean {
   }
 }
 
-async function extractAudioAndTranscribe(
-  filePath: string,
-  whisperBackend: "whisper-cpp" | "whisper",
-  whisperCppModelPath: string | null,
-): Promise<string | null> {
+async function extractAudio(filePath: string): Promise<{ audioPath: string; tmpDir: string } | null> {
   const tmpDir = await mkdtemp(join(tmpdir(), "md-anything-video-"));
   const audioPath = join(tmpDir, "audio.wav");
-
   try {
     execSync(`ffmpeg -i "${filePath}" -ar 16000 -ac 1 -c:a pcm_s16le "${audioPath}" -y 2>/dev/null`, {
       timeout: 120000,
     });
+    return { audioPath, tmpDir };
+  } catch {
+    await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+    return null;
+  }
+}
 
+async function transcribeWithWhisper(
+  audioPath: string,
+  tmpDir: string,
+  whisperBackend: "whisper-cpp" | "whisper",
+  whisperCppModelPath: string | null,
+): Promise<string | null> {
+  try {
     if (whisperBackend === "whisper-cpp" && whisperCppModelPath) {
       const outPrefix = join(tmpDir, "out");
       execSync(
@@ -47,8 +56,6 @@ async function extractAudioAndTranscribe(
     }
   } catch {
     return null;
-  } finally {
-    await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
   }
 }
 
@@ -56,6 +63,7 @@ export async function convertVideo(
   filePath: string,
   whisperBackend: "whisper-cpp" | "whisper" | null,
   whisperCppModelPath: string | null,
+  openRouterApiKey: string | null = null,
 ): Promise<NormalizedDocument> {
   const name = basename(filePath);
   const ext = extname(filePath).toLowerCase().slice(1);
@@ -70,11 +78,71 @@ export async function convertVideo(
 
   const ffmpegAvailable = hasFfmpeg();
 
-  if (!whisperBackend || !ffmpegAvailable) {
-    const missing = [];
-    if (!whisperBackend) missing.push("`brew install whisper-cpp` (then download a model)");
-    if (!ffmpegAvailable) missing.push("`brew install ffmpeg`");
+  // Prefer local whisper (private, offline, no API key needed)
+  if (whisperBackend && ffmpegAvailable) {
+    const extracted = await extractAudio(filePath);
+    if (extracted) {
+      const { audioPath, tmpDir } = extracted;
+      try {
+        const transcript = await transcribeWithWhisper(audioPath, tmpDir, whisperBackend, whisperCppModelPath);
+        if (transcript && transcript.length > 10) {
+          return {
+            title: name,
+            source: filePath,
+            sourceType: "video",
+            sections: [{ heading: "Transcript", kind: "transcript", content: transcript }],
+            metadata: {
+              extraction: "whisper",
+              extraction_status: "ok",
+              file_name: name,
+              file_size_bytes: fileSize,
+              format: ext,
+              whisper_available: true,
+              whisper_backend: whisperBackend,
+              ffmpeg_available: true,
+              transcript_length: transcript.length,
+            },
+          };
+        }
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+      }
+    }
+  }
 
+  // Fallback: OpenRouter Healer Alpha (free, native audio/video understanding)
+  if (openRouterApiKey && ffmpegAvailable) {
+    const extracted = await extractAudio(filePath);
+    if (extracted) {
+      const { audioPath, tmpDir } = extracted;
+      try {
+        const transcript = await transcribeAudioWithHealer(openRouterApiKey, audioPath);
+        if (transcript && transcript.length > 10) {
+          return {
+            title: name,
+            source: filePath,
+            sourceType: "video",
+            sections: [{ heading: "Transcript", kind: "transcript", content: transcript }],
+            metadata: {
+              extraction: "openrouter-healer",
+              extraction_status: "ok",
+              file_name: name,
+              file_size_bytes: fileSize,
+              format: ext,
+              model: "openrouter/healer-alpha",
+              ffmpeg_available: true,
+              transcript_length: transcript.length,
+            },
+          };
+        }
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+      }
+    }
+  }
+
+  if (whisperBackend && ffmpegAvailable) {
+    // Tools available but produced no output
     return {
       title: name,
       source: filePath,
@@ -82,45 +150,31 @@ export async function convertVideo(
       sections: [
         {
           heading: "Video File",
+          kind: "fallback",
           content:
-            `*File: ${name}*\n\nVideo transcription requires Whisper and ffmpeg.\n\nInstall: ${missing.join(", ")}` +
-            "\n\nThen run `mda doctor` to confirm the transcription tools are available.",
+            `*File: ${name}*\n\nWhisper ran but produced no transcript. ` +
+            "The video may have no audio track, very low-quality audio, or unsupported speech.",
         },
       ],
       metadata: {
-        extraction: "unavailable",
+        extraction: "whisper-empty",
         extraction_status: "weak",
-        file_name: name,
-        file_size_bytes: fileSize,
-        format: ext,
-        whisper_available: whisperBackend !== null,
-        ffmpeg_available: ffmpegAvailable,
-        low_confidence_output: true,
-      },
-    };
-  }
-
-  const transcript = await extractAudioAndTranscribe(filePath, whisperBackend!, whisperCppModelPath);
-
-  if (transcript && transcript.length > 10) {
-    return {
-      title: name,
-      source: filePath,
-      sourceType: "video",
-      sections: [{ heading: "Transcript", content: transcript }],
-      metadata: {
-        extraction: "whisper",
-        extraction_status: "ok",
         file_name: name,
         file_size_bytes: fileSize,
         format: ext,
         whisper_available: true,
         whisper_backend: whisperBackend,
         ffmpeg_available: true,
-        transcript_length: transcript.length,
       },
     };
   }
+
+  const missing = [];
+  if (!whisperBackend) missing.push("`brew install whisper-cpp` then `whisper-cpp --download-model base.en`");
+  if (!ffmpegAvailable) missing.push("`brew install ffmpeg`");
+  const apiNote = !openRouterApiKey
+    ? "\n\n**Alternative (free API):** Set `OPENROUTER_API_KEY` — uses Healer Alpha, no local install needed (still requires ffmpeg)"
+    : "";
 
   return {
     title: name,
@@ -129,20 +183,22 @@ export async function convertVideo(
     sections: [
       {
         heading: "Video File",
+        kind: "fallback",
         content:
-          `*File: ${name}*\n\nWhisper ran but produced no transcript. ` +
-          "The video may have no audio track, very low-quality audio, or unsupported speech.",
+          `*File: ${name}*\n\nVideo transcription requires Whisper and ffmpeg.\n\n` +
+          `**Install:** ${missing.join(", ")}${apiNote}\n\n` +
+          "Then run `mda doctor` to confirm the transcription tools are available.",
       },
     ],
     metadata: {
-      extraction: "whisper-empty",
+      extraction: "unavailable",
       extraction_status: "weak",
       file_name: name,
       file_size_bytes: fileSize,
       format: ext,
-      whisper_available: true,
-      whisper_backend: whisperBackend,
-      ffmpeg_available: true,
+      whisper_available: whisperBackend !== null,
+      ffmpeg_available: ffmpegAvailable,
+      low_confidence_output: true,
     },
   };
 }

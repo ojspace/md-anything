@@ -79,6 +79,7 @@ describe("image conversion (baseline, no OCR required)", () => {
 
     expect(doc.sections[0]?.content).toContain("No extractable text was found");
     expect(doc.sections[0]?.content).toContain("Install `tesseract`");
+    expect(doc.sections[0]?.content).toContain("OPENROUTER_API_KEY");
     expect(doc.sections[0]?.content).toContain("mda doctor");
   });
 });

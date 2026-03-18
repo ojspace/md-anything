@@ -11,6 +11,7 @@ export interface RuntimeCapabilities {
   whisperBackend: "whisper-cpp" | "whisper" | null;
   whisperCppModelPath: string | null;
   hasPlaywright: boolean;
+  openRouterApiKey: string | null;
 }
 
 export interface RuntimeProviders {
@@ -78,6 +79,7 @@ export function detectCapabilities(): RuntimeCapabilities {
         return false;
       }
     })(),
+    openRouterApiKey: process.env.OPENROUTER_API_KEY ?? null,
   };
 }
 

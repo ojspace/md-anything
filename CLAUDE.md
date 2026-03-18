@@ -91,6 +91,10 @@ bun run src/cli.ts convert "https://edition.cnn.com/travel/japan-seto-inland-sea
 
 `doctor` reports optional capabilities. Install as needed:
 
+- Base install stays lightweight: no bundled Whisper models, no required cloud API
+- Add native tools only for the formats you actually care about
+- `OPENROUTER_API_KEY` is an opt-in remote fallback, not a default requirement
+
 ```bash
 # PDF text extraction
 brew install poppler
@@ -104,6 +108,7 @@ brew install ffmpeg
 # Audio/video transcription (preferred — C++, no Python, no OpenAI branding)
 brew install whisper-cpp
 # then: whisper-cpp --download-model base.en
+# note: models are intentionally not bundled to keep md-anything lightweight
 
 # MOBI/ebook conversion (provides ebook-convert)
 brew install --cask calibre

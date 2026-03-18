@@ -64,8 +64,18 @@ mda doctor
 | Images (`.png`, `.jpg`, etc.) | best-effort | Metadata + OCR if tesseract installed |
 | YouTube URLs | best-effort | Transcript-first; honest fallback |
 | `.mobi` / `.azw` | best-effort | Requires Calibre ebook-convert |
-| Audio (`.mp3`, `.wav`, etc.) | optional | Requires OpenAI Whisper |
-| Video (`.mp4`, `.mov`, etc.) | optional | Requires Whisper + ffmpeg |
+| Audio (`.mp3`, `.wav`, etc.) | optional | Local `whisper-cpp` or opt-in remote fallback |
+| Video (`.mp4`, `.mov`, etc.) | optional | Local `whisper-cpp` + `ffmpeg`, or opt-in remote fallback |
+
+## Capability Layers
+
+md-anything is designed to stay lightweight by default:
+
+- Core mode: useful with zero extra native tools
+- Local upgrade mode: add `tesseract`, `pdftotext`, `whisper-cpp`, `ffmpeg`, or `ebook-convert` as needed
+- Remote enhancement mode: set `OPENROUTER_API_KEY` only if you explicitly want remote image/audio/video fallbacks
+
+No local models are bundled in the package. Heavy media capabilities remain optional layers, not requirements.
 
 ## JSON Output (Agent Pipelines)
 

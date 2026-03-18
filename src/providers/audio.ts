@@ -5,6 +5,7 @@ import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import type { NormalizedDocument } from "../core/types";
+import { transcribeAudioWithHealer } from "./openrouter-client";
 
 async function runWhisperCpp(filePath: string, modelPath: string): Promise<string | null> {
   const tmpDir = await mkdtemp(join(tmpdir(), "md-anything-audio-"));
@@ -46,6 +47,7 @@ export async function convertAudio(
   filePath: string,
   whisperBackend: "whisper-cpp" | "whisper" | null,
   whisperCppModelPath: string | null,
+  openRouterApiKey: string | null = null,
 ): Promise<NormalizedDocument> {
   const name = basename(filePath);
   const ext = extname(filePath).toLowerCase().slice(1);
@@ -58,7 +60,57 @@ export async function convertAudio(
     // ignore
   }
 
-  if (!whisperBackend) {
+  // Prefer local whisper (private, offline, no API key needed)
+  if (whisperBackend) {
+    const transcript =
+      whisperBackend === "whisper-cpp" && whisperCppModelPath
+        ? await runWhisperCpp(filePath, whisperCppModelPath)
+        : await runWhisper(filePath);
+
+    if (transcript && transcript.length > 10) {
+      return {
+        title: name,
+        source: filePath,
+        sourceType: "audio",
+        sections: [{ heading: "Transcript", kind: "transcript", content: transcript }],
+        metadata: {
+          extraction: "whisper",
+          extraction_status: "ok",
+          file_name: name,
+          file_size_bytes: fileSize,
+          format: ext,
+          whisper_available: true,
+          whisper_backend: whisperBackend,
+          transcript_length: transcript.length,
+        },
+      };
+    }
+  }
+
+  // Fallback: OpenRouter Healer Alpha (free, native audio understanding)
+  if (openRouterApiKey) {
+    const transcript = await transcribeAudioWithHealer(openRouterApiKey, filePath);
+    if (transcript && transcript.length > 10) {
+      return {
+        title: name,
+        source: filePath,
+        sourceType: "audio",
+        sections: [{ heading: "Transcript", content: transcript }],
+        metadata: {
+          extraction: "openrouter-healer",
+          extraction_status: "ok",
+          file_name: name,
+          file_size_bytes: fileSize,
+          format: ext,
+          model: "openrouter/healer-alpha",
+          transcript_length: transcript.length,
+        },
+      };
+    }
+  }
+
+  if (whisperBackend) {
+    // Whisper ran but produced nothing
     return {
       title: name,
       source: filePath,
@@ -66,46 +118,20 @@ export async function convertAudio(
       sections: [
         {
           heading: "Audio File",
+          kind: "fallback",
           content:
-            `*File: ${name}*\n\nAudio transcription requires whisper.cpp.\n\n` +
-            "Install with: `brew install whisper-cpp`\n\n" +
-            "Then download a model: `whisper-cpp --download-model base.en`\n\n" +
-            "Or use the Python fallback: `pip install openai-whisper`\n\n" +
-            "Then run `mda doctor` to confirm the tool is available.",
+            `*File: ${name}*\n\nWhisper ran but produced no transcript. ` +
+            "The audio may be silent, too noisy, or in an unsupported language.",
         },
       ],
       metadata: {
-        extraction: "unavailable",
+        extraction: "whisper-empty",
         extraction_status: "weak",
-        file_name: name,
-        file_size_bytes: fileSize,
-        format: ext,
-        whisper_available: false,
-        low_confidence_output: true,
-      },
-    };
-  }
-
-  const transcript =
-    whisperBackend === "whisper-cpp" && whisperCppModelPath
-      ? await runWhisperCpp(filePath, whisperCppModelPath)
-      : await runWhisper(filePath);
-
-  if (transcript && transcript.length > 10) {
-    return {
-      title: name,
-      source: filePath,
-      sourceType: "audio",
-      sections: [{ heading: "Transcript", content: transcript }],
-      metadata: {
-        extraction: "whisper",
-        extraction_status: "ok",
         file_name: name,
         file_size_bytes: fileSize,
         format: ext,
         whisper_available: true,
         whisper_backend: whisperBackend,
-        transcript_length: transcript.length,
       },
     };
   }
@@ -117,19 +143,22 @@ export async function convertAudio(
     sections: [
       {
         heading: "Audio File",
+        kind: "fallback",
         content:
-          `*File: ${name}*\n\nWhisper ran but produced no transcript. ` +
-          "The audio may be silent, too noisy, or in an unsupported language.",
+          `*File: ${name}*\n\nAudio transcription requires whisper.cpp or an OpenRouter API key.\n\n` +
+          "**Option 1 (local, preferred):** `brew install whisper-cpp` then `whisper-cpp --download-model base.en`\n\n" +
+          "**Option 2 (free API):** Set `OPENROUTER_API_KEY` — uses Healer Alpha, no install needed\n\n" +
+          "Then run `mda doctor` to confirm the tool is available.",
       },
     ],
     metadata: {
-      extraction: "whisper-empty",
+      extraction: "unavailable",
       extraction_status: "weak",
       file_name: name,
       file_size_bytes: fileSize,
       format: ext,
-      whisper_available: true,
-      whisper_backend: whisperBackend,
+      whisper_available: false,
+      low_confidence_output: true,
     },
   };
 }

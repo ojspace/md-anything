@@ -62,7 +62,9 @@ describe("CLI usability", () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("mda doctor");
+    expect(result.stdout).toContain("Lightweight default:");
     expect(result.stdout).toContain("pdf                      — strong support");
-    expect(result.stdout).toContain("Optional tools:");
+    expect(result.stdout).toContain("Optional local upgrades");
+    expect(result.stdout).toContain("Optional remote enhancement");
   });
 });

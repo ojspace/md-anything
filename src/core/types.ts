@@ -15,6 +15,7 @@ export type InputKind =
 
 export interface Section {
   heading?: string;
+  kind?: string;
   content: string;
 }
 

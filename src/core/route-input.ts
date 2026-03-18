@@ -33,7 +33,7 @@ export async function routeInput(
     case "youtube":
       return convertYoutube(input);
     case "image":
-      return convertImage(input, caps.hasTesseract);
+      return convertImage(input, caps.hasTesseract, caps.openRouterApiKey);
     case "pdf":
       return convertPdf(input, caps.hasPdftotext, caps.hasTesseract);
     case "epub":
@@ -41,9 +41,9 @@ export async function routeInput(
     case "mobi":
       return convertMobi(input, caps.hasEbookConvert);
     case "audio":
-      return convertAudio(input, caps.whisperBackend, caps.whisperCppModelPath);
+      return convertAudio(input, caps.whisperBackend, caps.whisperCppModelPath, caps.openRouterApiKey);
     case "video":
-      return convertVideo(input, caps.whisperBackend, caps.whisperCppModelPath);
+      return convertVideo(input, caps.whisperBackend, caps.whisperCppModelPath, caps.openRouterApiKey);
     default:
       return {
         title: input,
