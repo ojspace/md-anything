@@ -48,15 +48,21 @@ export function runDoctor(): void {
       description: "Audio/video transcription (OpenAI Whisper)",
       required: false,
     },
+    {
+      name: "ffmpeg",
+      available: checkBinary("ffmpeg"),
+      description: "Video/audio extraction for media workflows",
+      required: false,
+    },
   ];
 
-  console.log("\nmd-anything doctor\n");
+  console.log("\nmda doctor\n");
   console.log("Core capabilities (always available):");
   console.log("  ✅ text/markdown/json/html  — strong support");
   console.log("  ✅ url                      — strong support (fetch-based)");
   console.log("  ✅ youtube                  — best-effort (transcript-first)");
   console.log("  ✅ image                    — best-effort (metadata + optional OCR)");
-  console.log("  ✅ pdf                      — best-effort (text-first + optional pdftotext)");
+  console.log("  ✅ pdf                      — strong support (unpdf + optional pdftotext)");
   console.log("  ✅ epub                     — best-effort (native zip-based extraction)");
   console.log("  ✅ mobi                     — best-effort (requires ebook-convert)");
   console.log("");

@@ -8,6 +8,21 @@ Available as a **CLI**, an **MCP server** (for Claude, Cursor, and other AI tool
 
 ---
 
+## Quick start
+
+```bash
+# Install once, then use the short command
+bun install -g md-anything
+mda convert "https://hono.dev/docs/getting-started/basic"
+
+# Or run without installing
+bunx md-anything "https://hono.dev/docs/getting-started/basic"
+```
+
+If a result is weak, md-anything tells you why in the output metadata and extraction notes instead of failing silently.
+
+---
+
 ## Why I built this
 
 I build products across two companies. My days are dense — PDFs from investors, YouTube talks I want to extract ideas from, docs pages I need to search later, audio notes from walks, books in EPUB and MOBI I'm reading through. All of it locked in formats that AI tools and note apps can't easily consume.
@@ -47,6 +62,15 @@ So I built it. I use it daily. And I open-sourced it because I suspect a lot of 
 
 ---
 
+## What to expect
+
+- **Works best today:** text, markdown, JSON, HTML, normal web pages, and most PDFs
+- **Best-effort by design:** YouTube, images, EPUB, and MOBI
+- **Optional-tool upgrades:** `tesseract`, `pdftotext`, `ebook-convert`, and `whisper` improve some formats but are not required for the default workflow
+- **Weak outputs stay honest:** low-confidence results include extraction notes and metadata so you can decide whether to trust, retry, or install optional tools
+
+---
+
 ## Requirements
 
 - [Bun](https://bun.sh) v1.0+
@@ -59,6 +83,12 @@ So I built it. I use it daily. And I open-sourced it because I suspect a lot of 
 # Global install (requires Bun)
 bun install -g md-anything
 
+# Primary short command after install
+mda <input>
+
+# Full command still works
+md-anything <input>
+
 # Or run without installing
 bunx md-anything <input>
 ```
@@ -69,26 +99,29 @@ bunx md-anything <input>
 
 ```bash
 # Convert a single file or URL
-md-anything <input>
-md-anything convert <input>
+mda <input>
+mda convert <input>
+
+# See common copy-paste examples
+mda examples
 
 # Convert and save to a file
-md-anything convert report.pdf -o report.md
+mda convert report.pdf -o report.md
 
 # Ingest all supported files in a folder
-md-anything ingest ./notes
+mda ingest ./notes
 
 # Ingest and write .md files to an output directory
-md-anything ingest ./notes -o ./output
+mda ingest ./notes -o ./output
 
 # Ingest recursively
-md-anything ingest ./vault -r -o ./output
+mda ingest ./vault -r -o ./output
 
 # Check available optional tools
-md-anything doctor
+mda doctor
 
 # Help
-md-anything --help
+mda --help
 ```
 
 ### Source manifests
@@ -111,6 +144,15 @@ When `ingest` encounters a `sources.txt` or `sources.json`, it fetches and conve
 
 ---
 
+### Guided errors
+
+The CLI is designed to help, not just fail. Common mistakes get actionable messages:
+
+- **Pass a directory** → suggests `mda ingest <path>` instead of crashing
+- **Run `convert` with no input** → prints an example command with a real fixture
+- **Unknown file type** → points you to `--help` or `examples`
+- **Weak extraction** (image, PDF, EPUB, audio, video) → suggests `mda doctor` to see which optional tools can improve results
+
 ### Options
 
 | Flag | Default | Description |
@@ -131,12 +173,114 @@ Every converted file includes YAML frontmatter:
 title: "My Document"
 source: "path/to/file.pdf"
 source_type: pdf
-extraction: pdftotext
+extraction: unpdf
 extraction_status: ok
 support_level: strong
-usefulness_score: 0.80
+usefulness_score: 0.85
 ---
 ```
+
+---
+
+## Agent-Native Usage
+
+md-anything is designed to be used directly by AI agents — not just humans.
+
+### Compatibility matrix
+
+| Surface | Status | How it works |
+|---|---|---|
+| CLI | Ready | `mda` and `md-anything` both work for direct shell use |
+| MCP | Ready | `md-anything-mcp` exposes `convert`, `ingest`, and `doctor` |
+| Claude Code plugin | Ready | `.claude-plugin/` provides slash-command wrappers |
+| Package-scan skill discovery | Ready | `SKILL.md` ships in the npm package |
+| ClawHub / OpenClaw-style ecosystems | Ready | Stable CLI + `--json` + packaged `SKILL.md` make md-anything discoverable and callable without a custom adapter |
+
+### Claude Code Plugin
+
+Install the plugin for slash command access inside any Claude Code session:
+
+```bash
+/plugin marketplace add ojspace/md-anything
+/plugin install md-anything
+```
+
+Then use slash commands directly:
+
+```
+/md-anything:convert report.pdf
+/md-anything:ingest ./notes
+/md-anything:doctor
+```
+
+### JSON output for agent pipelines
+
+Use `--json` to get structured output any agent can parse:
+
+```bash
+mda convert report.pdf --json
+```
+
+```json
+{
+  "input": "report.pdf",
+  "markdown": "# Report Title\n...",
+  "kind": "pdf",
+  "supportLevel": "strong",
+  "metadata": {
+    "extraction": "unpdf",
+    "extraction_status": "ok",
+    "support_level": "strong",
+    "usefulness_score": 0.85
+  },
+  "warnings": []
+}
+```
+
+```bash
+mda ingest ./notes --json
+```
+
+```json
+{
+  "converted": 12,
+  "skipped": 2,
+  "failed": 0,
+  "docs": [{ "fileName": "note.md", "title": "My Note", "sourceType": "pdf", "source": "report.pdf", "metadata": { "extraction_status": "ok" } }]
+}
+```
+
+Argument errors are also machine-readable:
+
+```bash
+mda convert --json
+```
+
+```json
+{
+  "error": "Missing input for convert command.",
+  "code": "missing_input",
+  "examples": [
+    "mda convert tests/fixtures/sample.txt",
+    "mda convert \"https://example.com/article\""
+  ]
+}
+```
+
+### SKILL.md — agent discoverability
+
+After `npm install -g md-anything`, a `SKILL.md` is available in the package with YAML frontmatter and full command documentation. AI agents that scan installed packages for skill definitions will discover md-anything automatically.
+
+### ClawHub / OpenClaw compatibility
+
+md-anything is intentionally compatible with skill-driven ecosystems that rely on:
+
+- package-shipped skill docs (`SKILL.md`)
+- a stable CLI entrypoint
+- machine-readable JSON output
+- local, dependency-light execution
+
+That means it is already well-positioned for ClawHub/OpenClaw-style discovery and invocation without needing a separate product fork.
 
 ---
 
@@ -257,10 +401,10 @@ curl -X POST http://localhost:3000/convert \
   "kind": "pdf",
   "markdown": "---\ntitle: ...\n---\n\n# ...",
   "metadata": {
-    "extraction": "pdftotext",
+    "extraction": "unpdf",
     "extraction_status": "ok",
-    "support_level": "best-effort",
-    "usefulness_score": 0.8
+    "support_level": "strong",
+    "usefulness_score": 0.85
   }
 }
 ```
@@ -304,7 +448,7 @@ pip install openai-whisper
 Verify what's available:
 
 ```bash
-md-anything doctor
+mda doctor
 ```
 
 ---
@@ -316,7 +460,7 @@ git clone https://github.com/ojspace/md-anything
 cd md-anything
 bun install
 bun test
-bun run src/cli.ts doctor
+bun run doctor
 ```
 
 ### Test suite
@@ -345,6 +489,19 @@ tests/
   fixtures/       # test input files
 ```
 
+### Adding a new content type
+
+New formats should plug into the existing flow instead of inventing a parallel path:
+
+1. add detection in `src/core/detect-input.ts`
+2. add a provider in `src/providers/`
+3. wire it into `src/core/route-input.ts`
+4. set a support level in `src/core/support-levels.ts`
+5. return a `NormalizedDocument` with honest fallback metadata
+6. add contributor-safe tests first, then optional/live coverage if needed
+
+This keeps Phase 2 work like Vimeo support and richer structured extraction additive instead of architectural.
+
 ---
 
 ## Personal usage guide
@@ -355,7 +512,7 @@ This is how I use md-anything day-to-day. Concrete workflows, not hypotheticals.
 
 ```bash
 # Extract a PDF and pipe straight into a prompt
-md-anything convert ~/Downloads/hacking-growth.pdf -o /tmp/book.md
+mda convert ~/Downloads/hacking-growth.pdf -o /tmp/book.md
 # Then open book.md in Claude with: "Summarize the key growth frameworks"
 ```
 
@@ -363,7 +520,7 @@ md-anything convert ~/Downloads/hacking-growth.pdf -o /tmp/book.md
 
 ```bash
 # Turn all PDFs/EPUBs/URLs in a reading folder into linked Markdown notes
-md-anything ingest ~/Documents/reading-inbox -r --index --graph -o ~/Obsidian/inbox/converted/
+mda ingest ~/Documents/reading-inbox -r --index --graph -o ~/Obsidian/inbox/converted/
 ```
 
 The `--index` flag generates `_index.md` — a Markdown table linking all converted notes.
@@ -372,7 +529,7 @@ The `--graph` flag adds entity extraction (people, places, concepts) to each not
 ### Convert a YouTube talk to notes
 
 ```bash
-md-anything convert "https://www.youtube.com/watch?v=EqhKw0Oro_k"
+mda convert "https://www.youtube.com/watch?v=EqhKw0Oro_k"
 # If captions are available: full transcript → structured Markdown
 # If not: honest fallback stub so you know why it's empty
 ```
@@ -380,21 +537,21 @@ md-anything convert "https://www.youtube.com/watch?v=EqhKw0Oro_k"
 ### Pull a docs page for offline use or RAG
 
 ```bash
-md-anything convert "https://hono.dev/docs/getting-started/basic" -o /tmp/hono-basics.md
+mda convert "https://hono.dev/docs/getting-started/basic" -o /tmp/hono-basics.md
 ```
 
 ### Transcribe a voice note or meeting recording
 
 ```bash
 # Requires: pip install openai-whisper && brew install ffmpeg
-md-anything convert ~/recordings/standup-2026-03-13.mp3 -o standup.md
-md-anything convert ~/recordings/investor-call.mp4 -o investor-call.md
+mda convert ~/recordings/standup-2026-03-13.mp3 -o standup.md
+mda convert ~/recordings/investor-call.mp4 -o investor-call.md
 ```
 
 ### Bulk-process a folder and check what happened
 
 ```bash
-md-anything ingest ./notes --index -o ./output/
+mda ingest ./notes --index -o ./output/
 # _index.md shows every file: title, type, source — scan it to see what converted cleanly
 ```
 
@@ -411,7 +568,7 @@ Claude calls `convert`, gets the Markdown, and uses it in context — without yo
 ```bash
 brew install poppler tesseract ffmpeg
 pip install openai-whisper
-md-anything doctor  # verify everything is detected
+mda doctor  # verify everything is detected
 ```
 
 After this, PDFs extract real text instead of stubs, images get OCR'd, and audio/video get transcribed.

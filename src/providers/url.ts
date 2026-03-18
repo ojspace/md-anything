@@ -34,7 +34,9 @@ export async function convertUrl(url: string): Promise<NormalizedDocument> {
       sections: [
         {
           heading: "Fetch Failed",
-          content: `Could not retrieve content from: ${url}\n\nReason: ${fetchError || "Unknown error"}`,
+          content:
+            `Could not retrieve content from: ${url}\n\nReason: ${fetchError || "Unknown error"}` +
+            "\n\nThis can happen because of network problems, temporary site issues, or bot protection. Try again later, or save the page as HTML and convert the file locally.",
         },
       ],
       metadata: {

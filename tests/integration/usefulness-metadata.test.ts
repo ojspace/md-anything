@@ -41,6 +41,7 @@ describe("usefulness and finalize-document", () => {
     const hasExtractionNote = doc.sections.some((s) => s.heading === "Extraction Notes");
     expect(hasExtractionNote).toBe(true);
     expect(doc.metadata.low_confidence_output).toBe(true);
+    expect(doc.sections.some((s) => s.content.includes("mda doctor"))).toBe(true);
   });
 
   test("finalizeDocument does NOT add extraction note for strong docs", () => {

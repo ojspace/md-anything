@@ -1,0 +1,7 @@
+{
+  "name": "md-anything",
+  "description": "Convert any file, URL, or media to clean Markdown — PDF, EPUB, HTML, images, YouTube, audio, video, and more",
+  "version": "0.2.0",
+  "author": "ojspace",
+  "repository": "https://github.com/ojspace/md-anything"
+}

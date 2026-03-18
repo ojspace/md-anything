@@ -128,7 +128,10 @@ export async function convertEpub(filePath: string): Promise<NormalizedDocument>
     sections: [
       {
         heading: "EPUB Document",
-        content: `*File: ${name}*\n\nCould not extract readable sections from this EPUB. The file may be encrypted, malformed, or contain only images.`,
+        content:
+          `*File: ${name}*\n\nCould not extract readable sections from this EPUB. ` +
+          "The file may be encrypted, malformed, image-only, or missing the unzip support used for EPUB extraction.\n\n" +
+          "Run `mda doctor` to verify optional tool support and try another EPUB if the file looks suspicious.",
       },
     ],
     metadata: {

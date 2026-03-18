@@ -33,6 +33,15 @@ describe("URL fallback structure (deterministic shape tests)", () => {
     expect(doc.metadata.fetch_status).toBeDefined();
   });
 
+  test("URL fallback gives actionable recovery guidance", async () => {
+    const { convertUrl } = await import("../../src/providers/url");
+    const doc = await convertUrl("http://localhost:59999/nonexistent");
+
+    expect(doc.sections[0]?.content).toContain("Could not retrieve content");
+    expect(doc.sections[0]?.content).toContain("network problems");
+    expect(doc.sections[0]?.content).toContain("save the page as HTML");
+  });
+
   test("full pipeline with URL produces valid ConvertResult shape", async () => {
     const { convertUrl } = await import("../../src/providers/url");
     const doc = await convertUrl("http://localhost:59999/nonexistent");

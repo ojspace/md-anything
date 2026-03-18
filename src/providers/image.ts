@@ -48,9 +48,12 @@ export async function convertImage(filePath: string, hasTesseract = false): Prom
       content: ocrText,
     });
   } else {
+    const guidance = hasTesseract
+      ? "OCR ran but did not find readable text. The image may be decorative, low contrast, or mostly non-text."
+      : "OCR is not available in this environment. Install `tesseract` and run `mda doctor` to verify OCR support.";
     sections.push({
       heading: "Image",
-      content: `![${name}](${filePath})\n\n*No text content extracted.*${hasTesseract ? " OCR found no text." : " Install tesseract for OCR support."}`,
+      content: `![${name}](${filePath})\n\n*No extractable text was found in this image.*\n\n${guidance}`,
     });
   }
 

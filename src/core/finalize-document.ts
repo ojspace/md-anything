@@ -22,7 +22,7 @@ export function finalizeDocument(doc: NormalizedDocument): NormalizedDocument {
       {
         heading: "Extraction Notes",
         content:
-          "This output may be incomplete or low quality. Consider enabling optional local tools or a stronger provider for this input type.",
+          "This output may be incomplete or low quality. If this input depends on optional local tools (OCR, pdftotext, ebook-convert, whisper), run `mda doctor` to see what is available and improve the result.",
       },
     ],
     metadata: {

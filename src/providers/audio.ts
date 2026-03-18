@@ -46,7 +46,10 @@ export async function convertAudio(filePath: string, hasWhisper = false): Promis
       sections: [
         {
           heading: "Audio File",
-          content: `*File: ${name}*\n\nAudio transcription requires OpenAI Whisper.\n\nInstall with: \`pip install openai-whisper\``,
+          content:
+            `*File: ${name}*\n\nAudio transcription requires OpenAI Whisper.\n\n` +
+            "Install with: `pip install openai-whisper`\n\n" +
+            "Then run `mda doctor` to confirm Whisper is available.",
         },
       ],
       metadata: {
@@ -88,7 +91,9 @@ export async function convertAudio(filePath: string, hasWhisper = false): Promis
     sections: [
       {
         heading: "Audio File",
-        content: `*File: ${name}*\n\nWhisper ran but produced no transcript. The audio may be silent or in an unsupported language.`,
+        content:
+          `*File: ${name}*\n\nWhisper ran but produced no transcript. ` +
+          "The audio may be silent, too noisy, or in an unsupported language.",
       },
     ],
     metadata: {

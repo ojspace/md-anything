@@ -32,8 +32,17 @@ Note: `test:all` is not currently defined in `package.json`.
 ## CLI usage
 
 ```bash
-# Help
+# Installed short alias
+mda --help
+mda examples
+mda convert tests/fixtures/sample.txt
+mda tests/fixtures/sample.txt
+
+# Help (leads with "Common commands:" section)
 bun run src/cli.ts --help
+
+# Copy-paste examples
+bun run src/cli.ts examples
 
 # Health/capability check
 bun run src/cli.ts doctor
@@ -59,6 +68,16 @@ If you run `bun run src/cli.ts convert` with no input, CLI returns:
 
 - `Missing input for convert command.`
 - Exit code `1`
+
+### Guided errors
+
+The CLI detects common mistakes and prints actionable messages:
+
+- Directory passed as input → suggests `mda ingest <path>`
+- Unknown file type → points to `--help` or `examples`
+- Weak extraction (image/pdf/epub/audio/video) → suggests `doctor`
+
+Tests: `tests/integration/cli-ux.test.ts`
 
 ## Real-world smoke checks
 

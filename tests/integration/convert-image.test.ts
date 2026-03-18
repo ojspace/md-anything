@@ -72,4 +72,13 @@ describe("image conversion (baseline, no OCR required)", () => {
     expect(result.markdown).toBeDefined();
     expect(result.markdown.length).toBeGreaterThan(0);
   });
+
+  test("image fallback gives actionable OCR guidance", async () => {
+    const pngPath = join(FIXTURES, "sample.png");
+    const doc = await convertImage(pngPath, false);
+
+    expect(doc.sections[0]?.content).toContain("No extractable text was found");
+    expect(doc.sections[0]?.content).toContain("Install `tesseract`");
+    expect(doc.sections[0]?.content).toContain("mda doctor");
+  });
 });

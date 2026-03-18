@@ -68,7 +68,9 @@ export async function convertVideo(filePath: string, hasWhisper = false): Promis
       sections: [
         {
           heading: "Video File",
-          content: `*File: ${name}*\n\nVideo transcription requires Whisper and ffmpeg.\n\nInstall: ${missing.join(", ")}`,
+          content:
+            `*File: ${name}*\n\nVideo transcription requires Whisper and ffmpeg.\n\nInstall: ${missing.join(", ")}` +
+            "\n\nThen run `mda doctor` to confirm the transcription tools are available.",
         },
       ],
       metadata: {
@@ -112,7 +114,9 @@ export async function convertVideo(filePath: string, hasWhisper = false): Promis
     sections: [
       {
         heading: "Video File",
-        content: `*File: ${name}*\n\nWhisper ran but produced no transcript. The video may have no audio track, or the audio may be in an unsupported language.`,
+        content:
+          `*File: ${name}*\n\nWhisper ran but produced no transcript. ` +
+          "The video may have no audio track, very low-quality audio, or unsupported speech.",
       },
     ],
     metadata: {

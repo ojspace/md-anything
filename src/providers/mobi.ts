@@ -25,7 +25,10 @@ export async function convertMobi(filePath: string, hasEbookConvert = false): Pr
       sections: [
         {
           heading: "MOBI Document",
-          content: `*File: ${name}*\n\nMOBI conversion requires Calibre's ebook-convert tool.\n\nInstall Calibre to enable MOBI support: https://calibre-ebook.com/`,
+          content:
+            `*File: ${name}*\n\nMOBI conversion requires Calibre's ebook-convert tool.\n\n` +
+            "Install Calibre to enable MOBI support: https://calibre-ebook.com/\n\n" +
+            "After installing it, run `mda doctor` to verify that `ebook-convert` is available.",
         },
       ],
       metadata: {
@@ -70,7 +73,9 @@ export async function convertMobi(filePath: string, hasEbookConvert = false): Pr
   } else {
     sections.push({
       heading: "MOBI Document",
-      content: `*File: ${name}*\n\nebook-convert ran but produced no readable text. The file may be DRM-protected or image-based.`,
+      content:
+        `*File: ${name}*\n\nebook-convert ran but produced no readable text. ` +
+        "The file may be DRM-protected, malformed, or image-based.",
     });
   }
 

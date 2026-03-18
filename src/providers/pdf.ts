@@ -150,11 +150,11 @@ export async function convertPdf(
   // --- Fallback: scanned/image PDF ---
   if (sections.length === 0) {
     const hint = hasTesseract
-      ? "Consider running OCR manually: `tesseract` is available."
-      : "Install `tesseract` for OCR support on scanned PDFs.";
+      ? "This PDF appears to be scanned or image-based. `tesseract` is available, so OCR may help."
+      : "This PDF appears to be scanned or image-based. Install `tesseract` and run `mda doctor` to enable OCR support.";
     sections.push({
       heading: "PDF Document",
-      content: `*File: ${name}*\n\nNo machine-readable text found. ${hint}`,
+      content: `*File: ${name}*\n\nNo machine-readable text was found in this PDF.\n\n${hint}`,
     });
     extractionStatus = "weak";
   }
