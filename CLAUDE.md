@@ -101,6 +101,10 @@ brew install tesseract
 # Media handling
 brew install ffmpeg
 
+# Audio/video transcription (preferred — C++, no Python, no OpenAI branding)
+brew install whisper-cpp
+# then: whisper-cpp --download-model base.en
+
 # MOBI/ebook conversion (provides ebook-convert)
 brew install --cask calibre
 ```
@@ -112,6 +116,7 @@ command -v pdftotext
 command -v tesseract
 command -v ebook-convert
 command -v ffmpeg
+command -v whisper-cpp
 ```
 
 ## Troubleshooting

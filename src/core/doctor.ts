@@ -1,10 +1,13 @@
 import { execSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { homedir } from "node:os";
 
 interface Capability {
   name: string;
   available: boolean;
   description: string;
   required: boolean;
+  note?: string;
 }
 
 function checkBinary(bin: string): boolean {
@@ -16,7 +19,30 @@ function checkBinary(bin: string): boolean {
   }
 }
 
+function findWhisperCppModel(): string | null {
+  const home = homedir();
+  const candidates = [
+    "/opt/homebrew/share/whisper.cpp/models/ggml-base.en.bin",
+    "/opt/homebrew/share/whisper.cpp/models/ggml-base.bin",
+    "/opt/homebrew/share/whisper.cpp/models/ggml-small.en.bin",
+    "/opt/homebrew/share/whisper.cpp/models/ggml-small.bin",
+    "/usr/local/share/whisper.cpp/models/ggml-base.en.bin",
+    "/usr/local/share/whisper.cpp/models/ggml-base.bin",
+    `${home}/.cache/whisper-cpp/ggml-base.en.bin`,
+    `${home}/.cache/whisper-cpp/ggml-base.bin`,
+  ];
+  for (const p of candidates) {
+    if (existsSync(p)) return p;
+  }
+  return null;
+}
+
 export function runDoctor(): void {
+  const whisperCppInstalled = checkBinary("whisper-cpp");
+  const whisperCppModel = findWhisperCppModel();
+  const whisperCppReady = whisperCppInstalled && whisperCppModel !== null;
+  const whisperPyInstalled = checkBinary("whisper");
+
   const capabilities: Capability[] = [
     {
       name: "tesseract",
@@ -43,9 +69,18 @@ export function runDoctor(): void {
       required: false,
     },
     {
+      name: "whisper-cpp",
+      available: whisperCppReady,
+      description: "Audio/video transcription (brew install whisper-cpp)",
+      required: false,
+      note: whisperCppInstalled && !whisperCppModel
+        ? "installed but no model found — run: whisper-cpp --download-model base.en"
+        : undefined,
+    },
+    {
       name: "whisper",
-      available: checkBinary("whisper"),
-      description: "Audio/video transcription (OpenAI Whisper)",
+      available: whisperPyInstalled,
+      description: "Audio/video transcription fallback (pip install openai-whisper)",
       required: false,
     },
     {
@@ -72,6 +107,7 @@ export function runDoctor(): void {
     const icon = cap.available ? "✅" : "❌";
     const req = cap.required ? " (REQUIRED)" : " (optional)";
     console.log(`  ${icon} ${cap.name.padEnd(20)} — ${cap.description}${req}`);
+    if (cap.note) console.log(`     ⚠️  ${cap.note}`);
   }
 
   console.log("");

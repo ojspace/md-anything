@@ -41,9 +41,9 @@ export async function routeInput(
     case "mobi":
       return convertMobi(input, caps.hasEbookConvert);
     case "audio":
-      return convertAudio(input, caps.hasWhisper);
+      return convertAudio(input, caps.whisperBackend, caps.whisperCppModelPath);
     case "video":
-      return convertVideo(input, caps.hasWhisper);
+      return convertVideo(input, caps.whisperBackend, caps.whisperCppModelPath);
     default:
       return {
         title: input,

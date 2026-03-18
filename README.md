@@ -25,11 +25,11 @@ If a result is weak, md-anything tells you why in the output metadata and extrac
 
 ## Why I built this
 
-I build products across two companies. My days are dense — PDFs from investors, YouTube talks I want to extract ideas from, docs pages I need to search later, audio notes from walks, books in EPUB and MOBI I'm reading through. All of it locked in formats that AI tools and note apps can't easily consume.
+I run AI agent workflows in [Claude Code](https://claude.ai/code) and [OpenClaw](https://openclaw.dev). The agents need to read things — PDFs, docs pages, YouTube talks, EPUB books, audio notes. Every format is a different API, a different failure mode, a different stub to write.
 
-I wanted one command that could take *anything* and give me clean, structured Markdown I could drop into Obsidian, feed to Claude, or grep through. Something local-first that doesn't phone home, works offline for files, and never hard-fails — even if it can only produce a stub, it tells me *why*.
+I needed one reliable primitive: give it anything, get back clean Markdown. Something local-first with no cloud dependency, that works offline for files, and never hard-crashes — if extraction is weak, it returns a useful stub with honest metadata instead of throwing.
 
-So I built it. I use it daily. And I open-sourced it because I suspect a lot of developers have the same problem.
+I built it to make my own agent pipelines faster and more reliable. Once it was solid enough, I open-sourced it — the same problem shows up in every serious agent workflow.
 
 **The philosophy in three lines:**
 - Local-first — no cloud APIs for core functionality, your files stay on your machine
@@ -441,7 +441,11 @@ brew install poppler
 # MOBI/ebook conversion
 brew install --cask calibre
 
-# Audio/video transcription
+# Audio/video transcription (preferred — no Python required)
+brew install whisper-cpp
+whisper-cpp --download-model base.en
+
+# Or use the Python fallback
 pip install openai-whisper
 ```
 
@@ -543,7 +547,7 @@ mda convert "https://hono.dev/docs/getting-started/basic" -o /tmp/hono-basics.md
 ### Transcribe a voice note or meeting recording
 
 ```bash
-# Requires: pip install openai-whisper && brew install ffmpeg
+# Requires: brew install whisper-cpp ffmpeg (then: whisper-cpp --download-model base.en)
 mda convert ~/recordings/standup-2026-03-13.mp3 -o standup.md
 mda convert ~/recordings/investor-call.mp4 -o investor-call.md
 ```
@@ -566,8 +570,8 @@ Claude calls `convert`, gets the Markdown, and uses it in context — without yo
 ### Set up optional tools once, get better results forever
 
 ```bash
-brew install poppler tesseract ffmpeg
-pip install openai-whisper
+brew install poppler tesseract ffmpeg whisper-cpp
+whisper-cpp --download-model base.en
 mda doctor  # verify everything is detected
 ```
 

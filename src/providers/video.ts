@@ -14,27 +14,37 @@ function hasFfmpeg(): boolean {
   }
 }
 
-async function extractAudioAndTranscribe(filePath: string): Promise<string | null> {
+async function extractAudioAndTranscribe(
+  filePath: string,
+  whisperBackend: "whisper-cpp" | "whisper",
+  whisperCppModelPath: string | null,
+): Promise<string | null> {
   const tmpDir = await mkdtemp(join(tmpdir(), "md-anything-video-"));
-  const audioPath = join(tmpDir, "audio.mp3");
+  const audioPath = join(tmpDir, "audio.wav");
 
   try {
-    execSync(`ffmpeg -i "${filePath}" -q:a 0 -map a "${audioPath}" -y 2>/dev/null`, {
+    execSync(`ffmpeg -i "${filePath}" -ar 16000 -ac 1 -c:a pcm_s16le "${audioPath}" -y 2>/dev/null`, {
       timeout: 120000,
     });
 
-    execSync(`whisper "${audioPath}" --output_dir "${tmpDir}" --output_format txt 2>/dev/null`, {
-      timeout: 300000,
-    });
-
-    const files = await readdir(tmpDir);
-    const txtFile = files.find((f) => f.endsWith(".txt") && f !== "audio.txt");
-    const fallback = files.find((f) => f.endsWith(".txt"));
-    const target = txtFile ?? fallback;
-    if (!target) return null;
-
-    const text = await readFile(join(tmpDir, target), "utf-8");
-    return text.trim() || null;
+    if (whisperBackend === "whisper-cpp" && whisperCppModelPath) {
+      const outPrefix = join(tmpDir, "out");
+      execSync(
+        `whisper-cpp -f "${audioPath}" -m "${whisperCppModelPath}" -otxt -of "${outPrefix}" 2>/dev/null`,
+        { timeout: 300000 },
+      );
+      const text = await readFile(`${outPrefix}.txt`, "utf-8");
+      return text.trim() || null;
+    } else {
+      execSync(`whisper "${audioPath}" --output_dir "${tmpDir}" --output_format txt 2>/dev/null`, {
+        timeout: 300000,
+      });
+      const files = await readdir(tmpDir);
+      const txtFile = files.find((f) => f.endsWith(".txt"));
+      if (!txtFile) return null;
+      const text = await readFile(join(tmpDir, txtFile), "utf-8");
+      return text.trim() || null;
+    }
   } catch {
     return null;
   } finally {
@@ -42,7 +52,11 @@ async function extractAudioAndTranscribe(filePath: string): Promise<string | nul
   }
 }
 
-export async function convertVideo(filePath: string, hasWhisper = false): Promise<NormalizedDocument> {
+export async function convertVideo(
+  filePath: string,
+  whisperBackend: "whisper-cpp" | "whisper" | null,
+  whisperCppModelPath: string | null,
+): Promise<NormalizedDocument> {
   const name = basename(filePath);
   const ext = extname(filePath).toLowerCase().slice(1);
   let fileSize = 0;
@@ -56,9 +70,9 @@ export async function convertVideo(filePath: string, hasWhisper = false): Promis
 
   const ffmpegAvailable = hasFfmpeg();
 
-  if (!hasWhisper || !ffmpegAvailable) {
+  if (!whisperBackend || !ffmpegAvailable) {
     const missing = [];
-    if (!hasWhisper) missing.push("`pip install openai-whisper`");
+    if (!whisperBackend) missing.push("`brew install whisper-cpp` (then download a model)");
     if (!ffmpegAvailable) missing.push("`brew install ffmpeg`");
 
     return {
@@ -79,14 +93,14 @@ export async function convertVideo(filePath: string, hasWhisper = false): Promis
         file_name: name,
         file_size_bytes: fileSize,
         format: ext,
-        whisper_available: hasWhisper,
+        whisper_available: whisperBackend !== null,
         ffmpeg_available: ffmpegAvailable,
         low_confidence_output: true,
       },
     };
   }
 
-  const transcript = await extractAudioAndTranscribe(filePath);
+  const transcript = await extractAudioAndTranscribe(filePath, whisperBackend!, whisperCppModelPath);
 
   if (transcript && transcript.length > 10) {
     return {
@@ -101,6 +115,7 @@ export async function convertVideo(filePath: string, hasWhisper = false): Promis
         file_size_bytes: fileSize,
         format: ext,
         whisper_available: true,
+        whisper_backend: whisperBackend,
         ffmpeg_available: true,
         transcript_length: transcript.length,
       },
@@ -126,6 +141,7 @@ export async function convertVideo(filePath: string, hasWhisper = false): Promis
       file_size_bytes: fileSize,
       format: ext,
       whisper_available: true,
+      whisper_backend: whisperBackend,
       ffmpeg_available: true,
     },
   };
