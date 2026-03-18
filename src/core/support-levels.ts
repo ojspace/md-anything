@@ -10,7 +10,7 @@ export const INPUT_SUPPORT_LEVELS: Record<InputKind, SupportLevel> = {
   url: "strong",
   youtube: "best-effort",
   image: "best-effort",
-  pdf: "best-effort",
+  pdf: "strong",
   epub: "best-effort",
   mobi: "best-effort",
   audio: "optional",

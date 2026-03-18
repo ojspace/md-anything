@@ -44,7 +44,7 @@ app.get("/doctor", (c) => {
       url: "strong",
       youtube: "best-effort",
       image: "best-effort",
-      pdf: "best-effort",
+      pdf: "strong",
       epub: "best-effort",
       mobi: "best-effort",
     },

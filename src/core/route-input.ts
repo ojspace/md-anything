@@ -35,7 +35,7 @@ export async function routeInput(
     case "image":
       return convertImage(input, caps.hasTesseract);
     case "pdf":
-      return convertPdf(input, caps.hasPdftotext);
+      return convertPdf(input, caps.hasPdftotext, caps.hasTesseract);
     case "epub":
       return convertEpub(input);
     case "mobi":

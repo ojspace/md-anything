@@ -34,7 +34,7 @@ So I built it. I use it daily. And I open-sourced it because I suspect a lot of 
 | URLs (`http://`, `https://`) | ✅ Strong | Fetch + HTML extraction |
 | YouTube URLs | 🟡 Best-effort | Transcript-first; fallback note if unavailable |
 | Images (`.png`, `.jpg`, `.webp`, `.gif`) | 🟡 Best-effort | Metadata + OCR if tesseract available |
-| `.pdf` | 🟡 Best-effort | Text-first via pdftotext; fallback note |
+| `.pdf` | ✅ Strong | unpdf zero-dep extraction; pdftotext fallback; OCR hint |
 | `.epub` | 🟡 Best-effort | Native ZIP extraction; spine-aware |
 | `.mobi` / `.azw` | 🟡 Best-effort | Requires Calibre `ebook-convert` |
 | Audio (`.mp3`, `.wav`, etc.) | 🔶 Optional | Requires OpenAI Whisper |
@@ -133,7 +133,7 @@ source: "path/to/file.pdf"
 source_type: pdf
 extraction: pdftotext
 extraction_status: ok
-support_level: best-effort
+support_level: strong
 usefulness_score: 0.80
 ---
 ```
@@ -214,7 +214,7 @@ curl http://localhost:3000/doctor
     "url": "strong",
     "youtube": "best-effort",
     "image": "best-effort",
-    "pdf": "best-effort",
+    "pdf": "strong",
     "epub": "best-effort",
     "mobi": "best-effort"
   },

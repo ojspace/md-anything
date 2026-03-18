@@ -10,8 +10,12 @@ describe("INPUT_SUPPORT_LEVELS", () => {
     }
   });
 
-  test("best-effort support for image/youtube/pdf/epub/mobi", () => {
-    const bestEffortKinds: InputKind[] = ["youtube", "image", "pdf", "epub", "mobi"];
+  test("strong support for pdf (unpdf zero-dep extraction)", () => {
+    expect(INPUT_SUPPORT_LEVELS["pdf"]).toBe("strong");
+  });
+
+  test("best-effort support for image/youtube/epub/mobi", () => {
+    const bestEffortKinds: InputKind[] = ["youtube", "image", "epub", "mobi"];
     for (const kind of bestEffortKinds) {
       expect(INPUT_SUPPORT_LEVELS[kind]).toBe("best-effort");
     }

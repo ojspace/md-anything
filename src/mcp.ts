@@ -88,8 +88,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       frontmatter?: boolean;
     };
 
+    const resolvedInput = /^https?:\/\//i.test(input) ? input : resolve(input);
     const result = await convertToMarkdown(
-      { input: resolve(input), options: { ...DEFAULT_CONFIG.options, frontmatter } },
+      { input: resolvedInput, options: { ...DEFAULT_CONFIG.options, frontmatter } },
       runtime,
     );
 
@@ -135,7 +136,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       "- ✅ url — strong (fetch-based)",
       "- ✅ youtube — best-effort (transcript-first)",
       "- ✅ image — best-effort (metadata + optional OCR)",
-      "- ✅ pdf — best-effort (text-first + optional pdftotext)",
+      "- ✅ pdf — strong (unpdf zero-dep + pdftotext fallback)",
       "- ✅ epub — best-effort (native zip extraction)",
       "- ✅ mobi — best-effort (requires ebook-convert)",
       "",
