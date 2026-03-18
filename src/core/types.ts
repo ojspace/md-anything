@@ -36,9 +36,6 @@ export interface ConvertResult {
 }
 
 export interface IngestOptions {
-  graph?: boolean;
-  index?: boolean;
-  wikilinks?: boolean;
   recursive?: boolean;
 }
 
@@ -50,11 +47,6 @@ export interface IngestDoc {
   summary?: string;
   sections: Section[];
   metadata: Record<string, unknown>;
-  graph: {
-    entities: string[];
-    relations: string[];
-    relatedNotes: string[];
-  };
 }
 
 export interface IngestResult {

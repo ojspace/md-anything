@@ -6,7 +6,6 @@
       "name": "md-anything",
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.27.1",
-        "hono": "^4.12.7",
         "unpdf": "^1.4.0",
         "zod": "^3.22.4",
       },

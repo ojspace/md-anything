@@ -19,8 +19,6 @@ const { values, positionals } = parseArgs({
     output: { type: "string", short: "o" },
     frontmatter: { type: "boolean", default: true },
     json: { type: "boolean", default: false },
-    graph: { type: "boolean", default: false },
-    index: { type: "boolean", default: false },
     recursive: { type: "boolean", short: "r", default: false },
     help: { type: "boolean", short: "h", default: false },
   },
@@ -101,14 +99,11 @@ Usage:
   mda doctor
   mda examples
   md-anything-mcp
-  md-anything-server
 
 Options:
   -o, --output <path>   Output file (convert) or directory (ingest)
   --frontmatter         Include YAML frontmatter (default: true)
   --json                Output JSON instead of Markdown (for agent pipelines)
-  --graph               Extract entities and relations (ingest only)
-  --index               Generate _index.md listing (ingest only)
   -r, --recursive       Process subdirectories
   -h, --help            Show help
 
@@ -214,8 +209,6 @@ if (command === "ingest") {
 
   const result = await ingestFolder(resolve(folder), runtime, {
     recursive: values.recursive,
-    graph: values.graph,
-    index: values.index,
   });
 
   if (values.json) {
