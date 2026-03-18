@@ -6,16 +6,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import type { NormalizedDocument } from "../core/types";
 
-function checkEbookConvert(): boolean {
-  try {
-    execSync("which ebook-convert", { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export async function convertMobi(filePath: string): Promise<NormalizedDocument> {
+export async function convertMobi(filePath: string, hasEbookConvert = false): Promise<NormalizedDocument> {
   const name = basename(filePath);
   let fileSize = 0;
 
@@ -25,8 +16,6 @@ export async function convertMobi(filePath: string): Promise<NormalizedDocument>
   } catch {
     // ignore
   }
-
-  const hasEbookConvert = checkEbookConvert();
 
   if (!hasEbookConvert) {
     return {

@@ -46,7 +46,7 @@ describe("PDF conversion (using generated fixture)", () => {
     expect(doc.metadata.pdftotext_available).toBeDefined();
   });
 
-  test("PDF conversion result has support_level best-effort", async () => {
+  test("PDF conversion result has support_level strong", async () => {
     if (!existsSync(PDF_PATH)) {
       console.log("⏭️  PDF fixture not available - skipping");
       return;
@@ -58,7 +58,7 @@ describe("PDF conversion (using generated fixture)", () => {
     );
 
     expect(result.kind).toBe("pdf");
-    expect(result.metadata.support_level).toBe("best-effort");
+    expect(result.metadata.support_level).toBe("strong");
     expect(result.markdown).toBeDefined();
   });
 });

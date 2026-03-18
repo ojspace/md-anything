@@ -1,6 +1,8 @@
 import { stat } from "node:fs/promises";
 import { basename } from "node:path";
 import type { NormalizedDocument, Section } from "../core/types";
+import { htmlToMarkdown } from "../utils/html-to-markdown";
+import { splitIntoSections } from "../utils/split-sections";
 
 async function parseEpub(filePath: string): Promise<{ title: string; sections: Section[] } | null> {
   try {
@@ -73,25 +75,12 @@ async function parseEpub(filePath: string): Promise<{ title: string; sections: S
       const html = xhtmlResult.stdout;
       if (!html.trim()) continue;
       
-      const chapterTitle = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() ||
-                           html.match(/<h[1-3][^>]*>([^<]+)<\/h[1-3]>/i)?.[1]?.trim();
-      
-      const htmlEntities: Record<string, string> = { nbsp: " ", amp: "&", quot: '"', apos: "'", lt: "<", gt: ">" };
-      const noTags = html.replace(/<[^>]+>/g, " ");
-      const text = noTags
-        .replace(/&([a-zA-Z]+|#\d+|#x[\da-fA-F]+);/g, (match, ref: string) => {
-          if (ref.startsWith("#x")) return String.fromCharCode(parseInt(ref.slice(2), 16));
-          if (ref.startsWith("#")) return String.fromCharCode(parseInt(ref.slice(1), 10));
-          return htmlEntities[ref.toLowerCase()] ?? match;
-        })
-        .replace(/\s+/g, " ")
-        .trim();
-      
-      if (text.length > 20) {
-        sections.push({
-          heading: chapterTitle,
-          content: text,
-        });
+      const markdown = htmlToMarkdown(html);
+      if (markdown.length <= 20) continue;
+
+      const chapterSections = splitIntoSections(markdown);
+      if (chapterSections.length > 0) {
+        sections.push(...chapterSections);
       }
     }
 

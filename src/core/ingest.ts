@@ -1,4 +1,4 @@
-import { readdir, stat, mkdir } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import { join, basename, extname } from "node:path";
 import type { IngestOptions, IngestDoc, IngestResult, InputKind } from "./types";
 import type { RuntimeProviders } from "./runtime";
@@ -7,6 +7,7 @@ import { routeInput } from "./route-input";
 import { finalizeDocument } from "./finalize-document";
 import { isSourceManifest } from "./is-source-manifest";
 import { readSourceManifest } from "./source-manifest";
+import { extractGraph } from "./graph";
 
 const SUPPORTED_KINDS = new Set<InputKind>([
   "text",
@@ -19,6 +20,8 @@ const SUPPORTED_KINDS = new Set<InputKind>([
   "pdf",
   "epub",
   "mobi",
+  "audio",
+  "video",
 ]);
 
 function sanitizeOutputName(input: string, kind: string): string {
@@ -44,6 +47,21 @@ const DEFAULT_OPTIONS = {
   speakers: false,
   tables: true,
 };
+
+function buildIndexMarkdown(docs: IngestDoc[], folderPath: string): string {
+  const lines = [
+    `*${docs.length} document${docs.length === 1 ? "" : "s"} ingested from \`${basename(folderPath)}\`*`,
+    "",
+    "| File | Type | Source |",
+    "|---|---|---|",
+  ];
+
+  for (const doc of docs) {
+    lines.push(`| [${doc.title}](${doc.fileName}) | ${doc.sourceType} | ${doc.source} |`);
+  }
+
+  return lines.join("\n") + "\n";
+}
 
 export async function ingestFolder(
   folderPath: string,
@@ -89,6 +107,8 @@ export async function ingestFolder(
             await routeInput(sourceKind, source, DEFAULT_OPTIONS, runtime),
           );
 
+          const graph = options.graph ? extractGraph(normalized) : { entities: [], relations: [], relatedNotes: [] };
+
           docs.push({
             fileName: sanitizeOutputName(source, sourceKind),
             title: normalized.title,
@@ -97,7 +117,11 @@ export async function ingestFolder(
             summary: normalized.summary,
             sections: normalized.sections,
             metadata: normalized.metadata,
-            graph: { entities: [], relations: [], relatedNotes: [] },
+            graph: {
+              entities: graph.entities.map((e) => e.label),
+              relations: graph.relations.map((r) => `${r.from} → ${r.type} → ${r.to}`),
+              relatedNotes: graph.relatedNotes,
+            },
           });
           converted++;
         } catch {
@@ -118,6 +142,8 @@ export async function ingestFolder(
         await routeInput(kind, filePath, DEFAULT_OPTIONS, runtime),
       );
 
+      const graph = options.graph ? extractGraph(normalized) : { entities: [], relations: [], relatedNotes: [] };
+
       docs.push({
         fileName: sanitizeOutputName(filePath, kind),
         title: normalized.title,
@@ -126,12 +152,30 @@ export async function ingestFolder(
         summary: normalized.summary,
         sections: normalized.sections,
         metadata: normalized.metadata,
-        graph: { entities: [], relations: [], relatedNotes: [] },
+        graph: {
+          entities: graph.entities.map((e) => e.label),
+          relations: graph.relations.map((r) => `${r.from} → ${r.type} → ${r.to}`),
+          relatedNotes: graph.relatedNotes,
+        },
       });
       converted++;
     } catch {
       failed++;
     }
+  }
+
+  if (options.index && docs.length > 0) {
+    const indexMarkdown = buildIndexMarkdown(docs, folderPath);
+    docs.push({
+      fileName: "_index.md",
+      title: `Index: ${basename(folderPath)}`,
+      source: folderPath,
+      sourceType: "text",
+      sections: [{ content: indexMarkdown }],
+      metadata: { extraction: "index", extraction_status: "ok" },
+      graph: { entities: [], relations: [], relatedNotes: [] },
+    });
+    outputFiles.push("_index.md");
   }
 
   return { converted, skipped, failed, outputFiles, docs };

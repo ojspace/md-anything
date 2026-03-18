@@ -8,6 +8,8 @@ import { convertPdf } from "../providers/pdf";
 import { convertEpub } from "../providers/epub";
 import { convertMobi } from "../providers/mobi";
 import { convertYoutube } from "../providers/youtube";
+import { convertAudio } from "../providers/audio";
+import { convertVideo } from "../providers/video";
 
 export async function routeInput(
   kind: InputKind,
@@ -15,6 +17,8 @@ export async function routeInput(
   options: ConvertOptions,
   runtime: RuntimeProviders,
 ): Promise<NormalizedDocument> {
+  const caps = runtime.capabilities;
+
   switch (kind) {
     case "text":
       return convertText(input);
@@ -29,13 +33,17 @@ export async function routeInput(
     case "youtube":
       return convertYoutube(input);
     case "image":
-      return convertImage(input);
+      return convertImage(input, caps.hasTesseract);
     case "pdf":
-      return convertPdf(input);
+      return convertPdf(input, caps.hasPdftotext, caps.hasTesseract);
     case "epub":
       return convertEpub(input);
     case "mobi":
-      return convertMobi(input);
+      return convertMobi(input, caps.hasEbookConvert);
+    case "audio":
+      return convertAudio(input, caps.hasWhisper);
+    case "video":
+      return convertVideo(input, caps.hasWhisper);
     default:
       return {
         title: input,

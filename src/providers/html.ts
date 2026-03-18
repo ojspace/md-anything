@@ -1,75 +1,51 @@
 import { readFile } from "node:fs/promises";
-import type { NormalizedDocument, Section } from "../core/types";
-
-const HTML_ENTITIES: Record<string, string> = {
-  nbsp: " ",
-  amp: "&",
-  quot: '"',
-  apos: "'",
-  lt: "<",
-  gt: ">",
-};
-
-function decodeEntities(text: string): string {
-  return text.replace(/&([a-zA-Z]+|#\d+|#x[\da-fA-F]+);/g, (match, ref: string) => {
-    if (ref.startsWith("#x")) return String.fromCharCode(parseInt(ref.slice(2), 16));
-    if (ref.startsWith("#")) return String.fromCharCode(parseInt(ref.slice(1), 10));
-    return HTML_ENTITIES[ref.toLowerCase()] ?? match;
-  });
-}
-
-function stripHtml(html: string): string {
-  const noTags = html.replace(/<[^>]+>/g, " ");
-  return decodeEntities(noTags).replace(/\s+/g, " ").trim();
-}
+import type { NormalizedDocument } from "../core/types";
+import { htmlToMarkdown } from "../utils/html-to-markdown";
+import { splitIntoSections } from "../utils/split-sections";
 
 function extractTitle(html: string): string {
-  const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-  return m ? m[1].trim() : "HTML Document";
+  // og:title takes priority
+  const og = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)
+    ?? html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i);
+  if (og) return og[1].trim();
+
+  const title = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  if (title) return title[1].trim();
+
+  return "HTML Document";
 }
 
-function extractHeadings(html: string): Section[] {
-  const sections: Section[] = [];
-  const bodyRe = /<body[^>]*>([\s\S]*?)<\/body>/i;
-  const bodyMatch = html.match(bodyRe);
-  const body = bodyMatch ? bodyMatch[1] : html;
-  
-  const text = stripHtml(body);
-  if (text) {
-    sections.push({ content: text });
-  }
-  return sections;
+function extractOgDescription(html: string): string | undefined {
+  const m = html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i)
+    ?? html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i);
+  return m ? m[1].trim() : undefined;
 }
 
-export async function convertHtml(filePath: string): Promise<NormalizedDocument> {
-  const content = await readFile(filePath, "utf-8");
-  const title = extractTitle(content);
-  const sections = extractHeadings(content);
-
-  return {
-    title,
-    source: filePath,
-    sourceType: "html",
-    sections,
-    metadata: {
-      extraction: "html-strip",
-      extraction_status: "ok",
-    },
-  };
-}
-
-export async function convertHtmlContent(html: string, source: string): Promise<NormalizedDocument> {
+function buildDocument(html: string, source: string): NormalizedDocument {
   const title = extractTitle(html);
-  const sections = extractHeadings(html);
+  const summary = extractOgDescription(html);
+  const markdown = htmlToMarkdown(html);
+  const sections = splitIntoSections(markdown);
 
   return {
     title,
     source,
     sourceType: "html",
+    summary,
     sections,
     metadata: {
-      extraction: "html-strip",
-      extraction_status: sections.length > 0 && sections[0].content.length > 100 ? "ok" : "weak",
+      extraction: "html-to-markdown",
+      extraction_status: sections.length > 0 ? "ok" : "weak",
+      section_count: sections.length,
     },
   };
+}
+
+export async function convertHtml(filePath: string): Promise<NormalizedDocument> {
+  const content = await readFile(filePath, "utf-8");
+  return buildDocument(content, filePath);
+}
+
+export async function convertHtmlContent(html: string, source: string): Promise<NormalizedDocument> {
+  return buildDocument(html, source);
 }
