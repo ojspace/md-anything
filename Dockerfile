@@ -7,8 +7,4 @@ RUN bun install --frozen-lockfile --production
 COPY src/ ./src/
 COPY tsconfig.json ./
 
-EXPOSE 3000
-
-ENV PORT=3000
-
-CMD ["bun", "run", "src/server.ts"]
+CMD ["bun", "run", "src/mcp.ts"]
