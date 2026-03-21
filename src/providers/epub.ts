@@ -37,10 +37,14 @@ async function parseEpub(filePath: string): Promise<{ title: string; sections: S
         if (titleMatch) title = titleMatch[1].trim();
         
         const manifestItems: Record<string, string> = {};
-        const itemRe = /<item\s+[^>]*id="([^"]+)"[^>]*href="([^"]+)"[^>]*/gi;
+        // Match each <item ...> element and extract id/href in any order
+        const itemRe = /<item\s+([^>]+)(?:\/>|>)/gi;
         let m: RegExpExecArray | null;
         while ((m = itemRe.exec(opfContent)) !== null) {
-          manifestItems[m[1]] = m[2];
+          const attrs = m[1];
+          const idMatch = attrs.match(/\bid="([^"]+)"/i);
+          const hrefMatch = attrs.match(/\bhref="([^"]+)"/i);
+          if (idMatch && hrefMatch) manifestItems[idMatch[1]] = hrefMatch[1];
         }
         
         const spineRe = /<itemref\s+idref="([^"]+)"/gi;
