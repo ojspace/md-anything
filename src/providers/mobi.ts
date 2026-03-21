@@ -1,6 +1,6 @@
 import { stat } from "node:fs/promises";
 import { basename } from "node:path";
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { unlink, mkdtemp, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -51,13 +51,18 @@ export async function convertMobi(filePath: string, hasEbookConvert = false): Pr
     const outPath = join(tmpDir, "output.txt");
 
     try {
-      execSync(`ebook-convert "${filePath}" "${outPath}" 2>/dev/null`, {
+      const result = spawnSync("ebook-convert", [filePath, outPath], {
         timeout: 60000,
+        stdio: ["ignore", "ignore", "ignore"],
       });
-      text = await readFile(outPath, "utf-8");
-      text = text.trim();
-      if (text.length > 10) {
-        extractionStatus = "ok";
+      if (result.error || result.status !== 0) {
+        extractionMode = "ebook-convert-failed";
+      } else {
+        text = await readFile(outPath, "utf-8");
+        text = text.trim();
+        if (text.length > 10) {
+          extractionStatus = "ok";
+        }
       }
     } finally {
       try { await unlink(outPath); } catch {}

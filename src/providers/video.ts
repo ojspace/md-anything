@@ -1,6 +1,6 @@
 import { stat } from "node:fs/promises";
 import { basename, extname, join } from "node:path";
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import type { NormalizedDocument } from "../core/types";
@@ -8,8 +8,8 @@ import { transcribeAudioWithHealer } from "./openrouter-client";
 
 function hasFfmpeg(): boolean {
   try {
-    execSync("which ffmpeg", { stdio: "ignore" });
-    return true;
+    const result = spawnSync("which", ["ffmpeg"], { stdio: "ignore" });
+    return result.status === 0;
   } catch {
     return false;
   }
@@ -19,9 +19,14 @@ async function extractAudio(filePath: string): Promise<{ audioPath: string; tmpD
   const tmpDir = await mkdtemp(join(tmpdir(), "md-anything-video-"));
   const audioPath = join(tmpDir, "audio.wav");
   try {
-    execSync(`ffmpeg -i "${filePath}" -ar 16000 -ac 1 -c:a pcm_s16le "${audioPath}" -y 2>/dev/null`, {
+    const result = spawnSync("ffmpeg", ["-i", filePath, "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", audioPath, "-y"], {
       timeout: 120000,
+      stdio: ["ignore", "ignore", "ignore"],
     });
+    if (result.error || result.status !== 0) {
+      await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+      return null;
+    }
     return { audioPath, tmpDir };
   } catch {
     await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
@@ -38,16 +43,19 @@ async function transcribeWithWhisper(
   try {
     if (whisperBackend === "whisper-cpp" && whisperCppModelPath) {
       const outPrefix = join(tmpDir, "out");
-      execSync(
-        `whisper-cpp -f "${audioPath}" -m "${whisperCppModelPath}" -otxt -of "${outPrefix}" 2>/dev/null`,
-        { timeout: 300000 },
-      );
+      const result = spawnSync("whisper-cpp", ["-f", audioPath, "-m", whisperCppModelPath, "-otxt", "-of", outPrefix], {
+        timeout: 300000,
+        stdio: ["ignore", "ignore", "ignore"],
+      });
+      if (result.error || result.status !== 0) return null;
       const text = await readFile(`${outPrefix}.txt`, "utf-8");
       return text.trim() || null;
     } else {
-      execSync(`whisper "${audioPath}" --output_dir "${tmpDir}" --output_format txt 2>/dev/null`, {
+      const result = spawnSync("whisper", [audioPath, "--output_dir", tmpDir, "--output_format", "txt"], {
         timeout: 300000,
+        stdio: ["ignore", "ignore", "ignore"],
       });
+      if (result.error || result.status !== 0) return null;
       const files = await readdir(tmpDir);
       const txtFile = files.find((f) => f.endsWith(".txt"));
       if (!txtFile) return null;

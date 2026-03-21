@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import type { AppConfig } from "../config/defaults";
@@ -19,16 +19,16 @@ export interface RuntimeProviders {
   config: AppConfig;
 }
 
-function checkBinary(bin: string): boolean {
+export function checkBinary(bin: string): boolean {
   try {
-    execSync(`which ${bin}`, { stdio: "ignore" });
-    return true;
+    const result = spawnSync("which", [bin], { stdio: "ignore" });
+    return result.status === 0;
   } catch {
     return false;
   }
 }
 
-function findWhisperCppModel(): string | null {
+export function findWhisperCppModel(): string | null {
   const home = homedir();
   const candidates = [
     // Homebrew Apple Silicon

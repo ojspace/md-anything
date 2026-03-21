@@ -44,10 +44,37 @@ if [ -z "$TAG" ]; then
 fi
 
 DOWNLOAD_URL="https://github.com/$REPO/releases/download/$TAG/$ASSET"
+CHECKSUMS_URL="https://github.com/$REPO/releases/download/$TAG/checksums.txt"
 echo "Downloading md-anything $TAG ($ASSET)..."
 
 TMP=$(mktemp)
 curl -fsSL "$DOWNLOAD_URL" -o "$TMP"
+
+# Verify checksum if checksums file is available
+CHECKSUMS=$(mktemp)
+if curl -fsSL "$CHECKSUMS_URL" -o "$CHECKSUMS" 2>/dev/null; then
+  echo "Verifying checksum..."
+  EXPECTED=$(grep "$ASSET" "$CHECKSUMS" | awk '{print $1}')
+  if [ -n "$EXPECTED" ]; then
+    if command -v sha256sum &> /dev/null; then
+      ACTUAL=$(sha256sum "$TMP" | awk '{print $1}')
+    else
+      ACTUAL=$(shasum -a 256 "$TMP" | awk '{print $1}')
+    fi
+    if [ "$EXPECTED" != "$ACTUAL" ]; then
+      echo "ERROR: Checksum mismatch!"
+      echo "  Expected: $EXPECTED"
+      echo "  Actual:   $ACTUAL"
+      rm -f "$TMP" "$CHECKSUMS"
+      exit 1
+    fi
+    echo "Checksum verified."
+  fi
+else
+  echo "Warning: checksums.txt not found in release, skipping verification."
+fi
+rm -f "$CHECKSUMS"
+
 chmod +x "$TMP"
 
 # Move to install directory (uses sudo if needed)

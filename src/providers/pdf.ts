@@ -1,6 +1,6 @@
 import { readFile, stat } from "node:fs/promises";
 import { basename } from "node:path";
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import type { NormalizedDocument, Section } from "../core/types";
 import { splitIntoSections } from "../utils/split-sections";
 
@@ -33,11 +33,13 @@ async function extractViaUnpdf(filePath: string): Promise<{ pages: string[]; inf
 
 async function extractViaPdftotext(filePath: string): Promise<string | null> {
   try {
-    const result = execSync(`pdftotext "${filePath}" - 2>/dev/null`, {
+    const result = spawnSync("pdftotext", [filePath, "-"], {
       encoding: "utf-8",
       timeout: 30000,
+      stdio: ["ignore", "pipe", "ignore"],
     });
-    return result.trim() || null;
+    if (result.error || result.status !== 0) return null;
+    return result.stdout.trim() || null;
   } catch {
     return null;
   }

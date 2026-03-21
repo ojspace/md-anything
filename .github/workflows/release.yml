@@ -63,6 +63,15 @@ jobs:
           name: binaries
           path: dist/binaries/
 
+      - name: Generate checksums
+        working-directory: dist/binaries
+        run: |
+          if command -v sha256sum &> /dev/null; then
+            sha256sum * > checksums.txt
+          else
+            shasum -a 256 * > checksums.txt
+          fi
+
       - name: Create release and upload assets
         uses: softprops/action-gh-release@v2
         with:

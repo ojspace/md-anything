@@ -1,7 +1,4 @@
-import { execSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { homedir } from "node:os";
-import { detectCapabilities, type RuntimeCapabilities } from "./runtime";
+import { detectCapabilities, checkBinary, findWhisperCppModel, type RuntimeCapabilities } from "./runtime";
 
 interface Capability {
   name: string;
@@ -9,33 +6,6 @@ interface Capability {
   description: string;
   required: boolean;
   note?: string;
-}
-
-function checkBinary(bin: string): boolean {
-  try {
-    execSync(`which ${bin}`, { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function findWhisperCppModel(): string | null {
-  const home = homedir();
-  const candidates = [
-    "/opt/homebrew/share/whisper.cpp/models/ggml-base.en.bin",
-    "/opt/homebrew/share/whisper.cpp/models/ggml-base.bin",
-    "/opt/homebrew/share/whisper.cpp/models/ggml-small.en.bin",
-    "/opt/homebrew/share/whisper.cpp/models/ggml-small.bin",
-    "/usr/local/share/whisper.cpp/models/ggml-base.en.bin",
-    "/usr/local/share/whisper.cpp/models/ggml-base.bin",
-    `${home}/.cache/whisper-cpp/ggml-base.en.bin`,
-    `${home}/.cache/whisper-cpp/ggml-base.bin`,
-  ];
-  for (const p of candidates) {
-    if (existsSync(p)) return p;
-  }
-  return null;
 }
 
 function buildCapabilities(): Capability[] {
@@ -124,7 +94,7 @@ export function buildDoctorReport(capabilities = buildCapabilities()): string {
     "  ✅ youtube                  — best-effort (transcript-first)",
     "  ✅ image                    — best-effort (metadata only unless upgraded)",
     "  ✅ pdf                      — strong support (unpdf + optional pdftotext)",
-    "  ✅ epub                     — best-effort (native zip-based extraction)",
+    "  ✅ epub                     — best-effort (unzip-based extraction)",
     "",
     "Optional local upgrades (private/offline, adds setup weight):",
   ];
@@ -165,7 +135,7 @@ export function buildDoctorMarkdown(caps: RuntimeCapabilities = detectCapabiliti
     "- ✅ youtube — best-effort (transcript-first)",
     "- ✅ image — best-effort (metadata + optional OCR)",
     "- ✅ pdf — strong (unpdf zero-dep + pdftotext fallback)",
-    "- ✅ epub — best-effort (native zip extraction)",
+    "- ✅ epub — best-effort (unzip-based extraction)",
     "- ✅ mobi — best-effort (requires ebook-convert)",
     "",
     "### Optional tools",

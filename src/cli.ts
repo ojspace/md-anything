@@ -94,6 +94,7 @@ Common commands:
   mda doctor
   mda mcp install claude
   mda examples
+  mda demo
 
 Usage:
   mda <input>
@@ -102,6 +103,7 @@ Usage:
   mda doctor
   mda mcp install <target>
   mda examples
+  mda demo
   md-anything-mcp
 
 Options:
@@ -360,8 +362,8 @@ if (values.json) {
     warnings: buildConvertWarnings(input, result.kind, result.metadata),
   });
 } else {
-  const out = values.output || "/dev/stdout";
-  if (out === "/dev/stdout") {
+  const out = values.output;
+  if (!out) {
     console.log(result.markdown);
   } else {
     await writeFile(out, result.markdown, "utf-8");

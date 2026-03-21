@@ -1,6 +1,6 @@
 import { stat } from "node:fs/promises";
 import { basename, extname } from "node:path";
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -11,9 +11,11 @@ async function runWhisperCpp(filePath: string, modelPath: string): Promise<strin
   const tmpDir = await mkdtemp(join(tmpdir(), "md-anything-audio-"));
   const outPrefix = join(tmpDir, "out");
   try {
-    execSync(`whisper-cpp -f "${filePath}" -m "${modelPath}" -otxt -of "${outPrefix}" 2>/dev/null`, {
+    const result = spawnSync("whisper-cpp", ["-f", filePath, "-m", modelPath, "-otxt", "-of", outPrefix], {
       timeout: 300000,
+      stdio: ["ignore", "ignore", "ignore"],
     });
+    if (result.error || result.status !== 0) return null;
     const text = await readFile(`${outPrefix}.txt`, "utf-8");
     return text.trim() || null;
   } catch {
@@ -26,9 +28,11 @@ async function runWhisperCpp(filePath: string, modelPath: string): Promise<strin
 async function runWhisper(filePath: string): Promise<string | null> {
   const tmpDir = await mkdtemp(join(tmpdir(), "md-anything-audio-"));
   try {
-    execSync(`whisper "${filePath}" --output_dir "${tmpDir}" --output_format txt 2>/dev/null`, {
+    const result = spawnSync("whisper", [filePath, "--output_dir", tmpDir, "--output_format", "txt"], {
       timeout: 300000,
+      stdio: ["ignore", "ignore", "ignore"],
     });
+    if (result.error || result.status !== 0) return null;
 
     const files = await readdir(tmpDir);
     const txtFile = files.find((f) => f.endsWith(".txt"));
