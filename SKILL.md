@@ -1,15 +1,15 @@
 ---
 name: md-anything
-description: Convert any file, URL, or media to clean Markdown. Supports PDF, EPUB, HTML, images (OCR), YouTube, audio/video transcription, and more. Use `mda doctor` to check available capabilities.
+description: Convert files, URLs, and media to Markdown with a local-first CLI and MCP server. Use `mda doctor` to see what this machine can actually extract well.
 ---
 
 # md-anything
 
-Convert anything to Markdown — CLI, MCP server, and HTTP API.
+Convert files, URLs, and media into Markdown for agent workflows and local automation.
 
 **Install:** `bun install -g md-anything` or `npm install -g md-anything`
 
-## Command Groups
+## Quick commands
 
 ### convert
 Convert a single file or URL to Markdown.
@@ -31,26 +31,29 @@ Batch-convert all supported files in a folder.
 ```bash
 mda ingest ./notes
 mda ingest ./notes -o ./output
-mda ingest ./vault -r -o ./output        # recursive
-mda ingest ./notes --graph --index       # entity extraction + index
+mda ingest ./vault -r -o ./output
 ```
 
-### doctor
-Report available capabilities and optional tool status.
+### doctor / examples
+Report capabilities or see copy-paste examples.
 
 ```bash
 mda doctor
+mda examples
+mda demo
 ```
+
+> [!NOTE]
+> `mda mcp install` assumes `md-anything-mcp` is in your `PATH`.
+> For binary-only installs, use the manual config shown below with `bunx`.
 
 ## Options
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `-o, --output <path>` | stdout | Output file (convert) or directory (ingest) |
-| `--frontmatter` | `true` | Include YAML frontmatter with metadata |
+| `--no-frontmatter` | `false` | Omit YAML frontmatter from Markdown output |
 | `--json` | `false` | Output JSON instead of Markdown (for agent pipelines) |
-| `--graph` | `false` | Extract entities and relations (ingest only) |
-| `--index` | `false` | Generate `_index.md` table of contents (ingest only) |
 | `-r, --recursive` | `false` | Process subdirectories (ingest only) |
 
 ## Supported Input Types
@@ -60,12 +63,12 @@ mda doctor
 | `.txt`, `.md`, `.json` | strong | Native |
 | `.html`, URLs | strong | Fetch + HTML extraction |
 | `.pdf` | strong | unpdf zero-dep; pdftotext fallback |
-| `.epub` | best-effort | Native ZIP extraction |
+| `.epub` | best-effort | Uses `unzip`; falls back honestly when extraction is weak |
 | Images (`.png`, `.jpg`, etc.) | best-effort | Metadata + OCR if tesseract installed |
 | YouTube URLs | best-effort | Transcript-first; honest fallback |
 | `.mobi` / `.azw` | best-effort | Requires Calibre ebook-convert |
-| Audio (`.mp3`, `.wav`, etc.) | optional | Local `whisper-cpp` or opt-in remote fallback |
-| Video (`.mp4`, `.mov`, etc.) | optional | Local `whisper-cpp` + `ffmpeg`, or opt-in remote fallback |
+| Audio (`.mp3`, `.wav`, etc.) | optional | Local `whisper-cpp` / `whisper`, or opt-in remote fallback |
+| Video (`.mp4`, `.mov`, etc.) | optional | `ffmpeg` plus local transcription, or opt-in remote fallback |
 
 ## Capability Layers
 
@@ -77,7 +80,7 @@ md-anything is designed to stay lightweight by default:
 
 No local models are bundled in the package. Heavy media capabilities remain optional layers, not requirements.
 
-## JSON Output (Agent Pipelines)
+## JSON Output
 
 Use `--json` to get structured output consumable in agent workflows:
 
@@ -91,6 +94,7 @@ mda convert report.pdf --json
   "markdown": "# Report Title\n...",
   "kind": "pdf",
   "supportLevel": "strong",
+  "chunks": [],
   "metadata": {
     "title": "Report Title",
     "source": "report.pdf",
@@ -99,6 +103,7 @@ mda convert report.pdf --json
     "support_level": "strong",
     "usefulness_score": 0.85
   },
+  "provenance": { "documentId": "..." },
   "warnings": []
 }
 ```
@@ -164,13 +169,17 @@ Add to `.mcp.json` for use inside Claude, Cursor, or other MCP hosts:
 }
 ```
 
-## HTTP API
+The MCP server exposes:
 
-```bash
-md-anything-server          # starts on port 3000
-```
+- tools: `convert`, `ingest`, `doctor`
+- resources: `md-anything://doctor`, `md-anything://workspace-policy`, `md-anything://workspace/{path}`
+- prompts: `analyze_document`, `summarize_document_chunks`
 
-Endpoints: `GET /doctor`, `POST /convert`, `POST /ingest`
+Safety defaults for MCP:
+
+- local paths must stay inside the current workspace
+- only `http://` and `https://` URLs are allowed
+- private and localhost URLs are blocked unless `MDA_MCP_ALLOW_PRIVATE_URLS=1`
 
 ## Ecosystem Compatibility
 

@@ -19,23 +19,21 @@ Examples:
    ```
 
 2. Parse the JSON response:
-    - `converted` — number of files successfully converted
-    - `skipped` — files that were skipped (unsupported or already up to date)
-    - `failed` — files that failed
-    - `docs` — array of `{ fileName, title, sourceType, source, metadata }`
+     - `converted` — number of files successfully converted
+     - `skipped` — files that were skipped (unsupported or unreadable)
+     - `failed` — files that failed
+     - `docs` — array of `{ fileName, title, sourceType, source, metadata }`
 
 3. Report a summary to the user: how many converted, skipped, failed.
 
-4. If any files failed, list them and suggest `mda doctor` to check optional tool availability.
+4. If any files failed, explain that ingest only returns counts plus converted docs, and suggest `mda doctor` when missing local tools may be the cause.
 
 ## Useful flags to pass through from the user's request
 
 - `-r` or `--recursive` — process subdirectories
 - `-o <dir>` — write `.md` files to an output directory
-- `--graph` — extract entities and relations into metadata
-- `--index` — generate `_index.md` table of contents
 
 ## Notes
 
 - If `mda` is not installed, instruct the user to run: `bun install -g md-anything`
-- Source manifests: if a `sources.txt` or `sources.json` exists in the folder, those URLs are fetched and converted too
+- Current ingest walks supported files in the folder; it does not process source manifests or generate graph/index artifacts

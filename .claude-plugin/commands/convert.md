@@ -35,4 +35,4 @@ Where `<input>` is a file path or URL. Examples:
 - If `mda` is not installed, instruct the user to run: `bun install -g md-anything`
 - For PDFs, HTML, and plain URLs: expect strong results
 - For images: results improve with `tesseract` installed
-- For audio/video: requires OpenAI Whisper
+- For audio/video: `whisper-cpp` is preferred, `whisper` also works, and `OPENROUTER_API_KEY` is an opt-in remote fallback

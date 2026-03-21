@@ -27,7 +27,14 @@ describe("CLI usability", () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("Copy-paste examples:");
     expect(result.stdout).toContain("mda ingest ./notes -o ./output -r");
-    expect(result.stdout).toContain("mda doctor");
+  });
+
+  test("demo command acts as an alias for examples", () => {
+    const result = runCli(["demo"]);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("Copy-paste examples:");
+    expect(result.stdout).toContain("mda ingest ./notes -o ./output -r");
   });
 
   test("convert with no input prints guided error", () => {

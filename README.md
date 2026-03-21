@@ -1,12 +1,13 @@
 # md-anything
 
-Convert any file or URL to clean Markdown — for AI agents, local scripts, and batch pipelines.
+Convert files, URLs, and media into honest Markdown for terminal workflows and MCP-powered agents.
 
-Available as a **CLI** and **MCP server**.
+`md-anything` currently ships two surfaces:
+
+- a local-first CLI: `mda`
+- a stdio MCP server: `md-anything-mcp`
 
 [![CI](https://github.com/ojspace/md-anything/actions/workflows/ci.yml/badge.svg)](https://github.com/ojspace/md-anything/actions/workflows/ci.yml) ![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)
-
----
 
 ## Install
 
@@ -14,249 +15,102 @@ Available as a **CLI** and **MCP server**.
 curl -fsSL https://raw.githubusercontent.com/ojspace/md-anything/main/install.sh | bash
 ```
 
-Then wire it into your AI tool in one command:
+Or install globally with Bun or npm:
 
 ```bash
-mda mcp install cursor    # Cursor
-mda mcp install claude    # Claude Desktop
-mda mcp install windsurf  # Windsurf
+bun install -g md-anything
+npm install -g md-anything
 ```
 
-Restart your editor and the `convert`, `ingest`, and `doctor` tools are live.
-
-Verify your setup:
+Quick sanity check:
 
 ```bash
+mda --help
 mda doctor
 ```
 
-<details>
-<summary>Other install methods</summary>
+## Quick start
 
 ```bash
-# Global install (requires Bun)
-bun install -g md-anything
-
-# Or run without installing
-bunx md-anything <input>
-```
-
-</details>
-
----
-
-## Setup with your AI tool
-
-### Cursor
-
-```bash
-mda mcp install cursor
-```
-
-Restart Cursor — it will expose `convert`, `ingest`, and `doctor` as tools the AI can call directly.
-
-Or manually add to `~/.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "md-anything": {
-      "command": "md-anything-mcp"
-    }
-  }
-}
-```
-
----
-
-### Claude Code
-
-```bash
-mda mcp install claude
-```
-
-Or install the Claude Code plugin for slash commands:
-
-```bash
-/plugin install ojspace/md-anything
-```
-
-Then use directly:
-
-```
-/md-anything:convert report.pdf
-/md-anything:ingest ./notes
-/md-anything:doctor
-```
-
-Or add manually to your project's `.mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "md-anything": {
-      "command": "md-anything-mcp"
-    }
-  }
-}
-```
-
----
-
-### Windsurf
-
-```bash
-mda mcp install windsurf
-```
-
-Or manually add to `~/.codeium/windsurf/mcp_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "md-anything": {
-      "command": "bunx",
-      "args": ["md-anything-mcp"]
-    }
-  }
-}
-```
-
----
-
-### VS Code (GitHub Copilot)
-
-Add to `.vscode/mcp.json` in your workspace:
-
-```json
-{
-  "servers": {
-    "md-anything": {
-      "type": "stdio",
-      "command": "bunx",
-      "args": ["md-anything-mcp"]
-    }
-  }
-}
-```
-
-Or use the CLI via VS Code's integrated terminal — no setup needed.
-
----
-
-### Codex (OpenAI)
-
-Use via terminal in any Codex session. No special setup — just install globally:
-
-```bash
-bun install -g md-anything
-mda convert <file-or-url>
-```
-
-Pipe output directly into your prompt context or redirect to a file:
-
-```bash
-mda convert report.pdf -o context.md
-```
-
----
-
-### Any MCP-compatible client (Zed, Antigravity, etc.)
-
-Use the stdio transport with `bunx`:
-
-```json
-{
-  "mcpServers": {
-    "md-anything": {
-      "command": "bunx",
-      "args": ["md-anything-mcp"]
-    }
-  }
-}
-```
-
-If globally installed, use the binary directly:
-
-```json
-{
-  "mcpServers": {
-    "md-anything": {
-      "command": "md-anything-mcp"
-    }
-  }
-}
-```
-
----
-
-### Bash / terminal
-
-```bash
-mda report.pdf
+# Convert one file or URL
+mda tests/fixtures/sample.txt
+mda convert report.pdf
 mda convert "https://example.com/article"
-mda convert "https://www.youtube.com/watch?v=EqhKw0Oro_k"
+
+# Batch-convert a folder
 mda ingest ./notes -o ./output -r
+
+# Check optional tool availability
 mda doctor
+
+# Copy-paste examples
+mda examples
+mda demo
 ```
 
----
+## What is supported
 
-## What it converts
+`md-anything` uses three support levels:
+
+- `strong`: works well out of the box
+- `best-effort`: useful, but quality depends on content and local tools
+- `optional`: requires extra tools or an opt-in remote fallback
 
 | Input | Support | Notes |
 |---|---|---|
-| `.txt` | ✅ Strong | Plain text files |
-| `.md` / `.markdown` | ✅ Strong | Passthrough |
-| `.json` | ✅ Strong | Formatted code block |
-| `.html` / `.htm` | ✅ Strong | Tag stripping + text extraction |
-| URLs (`http://`, `https://`) | ✅ Strong | Fetch + HTML extraction |
-| YouTube URLs | 🟡 Best-effort | Transcript-first; fallback note if unavailable |
-| Images (`.png`, `.jpg`, `.webp`, `.gif`) | 🟡 Best-effort | Metadata + OCR if tesseract available |
-| `.pdf` | ✅ Strong | unpdf zero-dep; pdftotext fallback; OCR hint |
-| `.epub` | 🟡 Best-effort | Native ZIP extraction; spine-aware |
-| `.mobi` / `.azw` | 🟡 Best-effort | Requires Calibre `ebook-convert` |
-| Audio (`.mp3`, `.wav`, etc.) | 🔶 Optional | Local `whisper-cpp` or opt-in OpenRouter |
-| Video (`.mp4`, `.mov`, etc.) | 🔶 Optional | Local `whisper-cpp` + `ffmpeg`, or opt-in OpenRouter |
-
----
+| `.txt`, `.md`, `.markdown`, `.json`, `.html`, `.htm` | strong | Native or straightforward extraction |
+| `http://` / `https://` URLs | strong | Fetch + HTML extraction |
+| `.pdf` | strong | `unpdf` by default, `pdftotext` can improve some files |
+| YouTube URLs | best-effort | Transcript-first, honest fallback when unavailable |
+| Images (`.png`, `.jpg`, `.webp`, `.gif`, etc.) | best-effort | Metadata-only by default, OCR with `tesseract`, richer remote fallback via OpenRouter |
+| `.epub` | best-effort | Extraction depends on `unzip`; `doctor` will tell you if it is missing |
+| `.mobi`, `.azw` | best-effort | Requires Calibre `ebook-convert` |
+| Audio (`.mp3`, `.wav`, etc.) | optional | Local `whisper-cpp` or `whisper`, optional OpenRouter fallback |
+| Video (`.mp4`, `.mov`, etc.) | optional | Requires `ffmpeg` plus `whisper-cpp` / `whisper`, optional OpenRouter fallback |
 
 ## CLI reference
 
 ```bash
-# Convert a single file or URL
+# Single input
 mda <input>
 mda convert <input>
 
-# Convert and save to a file
+# Write Markdown to a file
 mda convert report.pdf -o report.md
 
-# Ingest all supported files in a folder
+# Omit frontmatter
+mda convert report.pdf --no-frontmatter
+
+# Machine-readable JSON
+mda convert report.pdf --json
+
+# Batch-convert a folder
 mda ingest ./notes
 mda ingest ./notes -o ./output
-mda ingest ./vault -r -o ./output   # recursive
+mda ingest ./vault -r -o ./output
 
-# Check available optional tools
+# Environment/capability checks
 mda doctor
 
-# See examples
-mda examples
-
-# Help
+# Help and examples
 mda --help
+mda examples
+mda demo
 ```
 
-### Options
+### Flags
 
-| Flag | Default | Description |
-|---|---|---|
-| `-o, --output <path>` | stdout | Output file (convert) or directory (ingest) |
-| `--no-frontmatter` | off | Omit YAML frontmatter from output |
-| `--json` | `false` | Machine-readable JSON output (for agent pipelines) |
-| `-r, --recursive` | `false` | Process subdirectories (ingest only) |
-| `-h, --help` | — | Show help |
+| Flag | Description |
+|---|---|
+| `-o, --output <path>` | Output file for `convert` or output directory for `ingest` |
+| `--no-frontmatter` | Omit YAML frontmatter from generated Markdown |
+| `--json` | Return machine-readable JSON instead of Markdown |
+| `-r, --recursive` | Recurse into subdirectories during `ingest` |
+| `-h, --help` | Show help |
 
-### JSON output for agent pipelines
+### JSON output
+
+`convert --json` returns a stable machine-readable envelope:
 
 ```bash
 mda convert report.pdf --json
@@ -268,52 +122,181 @@ mda convert report.pdf --json
   "markdown": "# Report Title\n...",
   "kind": "pdf",
   "supportLevel": "strong",
+  "chunks": [],
   "metadata": {
     "extraction": "unpdf",
     "extraction_status": "ok",
+    "support_level": "strong",
     "usefulness_score": 0.85
+  },
+  "provenance": {
+    "documentId": "..."
   },
   "warnings": []
 }
 ```
 
----
+`ingest --json` returns counts plus per-document metadata:
 
-## MCP tools
+```bash
+mda ingest ./notes --json
+```
+
+```json
+{
+  "converted": 12,
+  "skipped": 2,
+  "failed": 0,
+  "docs": [
+    {
+      "fileName": "note.md",
+      "title": "My Note",
+      "summary": "This is a summary of the note.",
+      "sourceType": "pdf",
+      "source": "report.pdf",
+      "chunks": [],
+      "metadata": {
+        "extraction_status": "ok"
+      },
+      "provenance": {
+        "documentId": "..."
+      }
+    }
+  ]
+}
+```
+
+Argument errors stay machine-readable too:
+
+```json
+{
+  "error": "Missing input for convert command.",
+  "code": "missing_input",
+  "examples": [
+    "mda convert tests/fixtures/sample.txt",
+    "mda convert \"https://example.com/article\""
+  ]
+}
+```
+
+## MCP server
+
+Run directly:
+
+```bash
+md-anything-mcp
+```
+
+Or let the CLI wire supported clients for you:
+
+```bash
+mda mcp install claude
+mda mcp install cursor
+mda mcp install windsurf
+```
+
+> [!NOTE]
+> `mda mcp install` assumes `md-anything-mcp` is in your `PATH`.
+> If you used the `install.sh` script, it currently only installs the `mda` binary.
+> For the MCP server, it is recommended to either install with `bun install -g md-anything`
+> or use the manual config below with `bunx`.
+
+### Tools
+
+The MCP server exposes three tools:
 
 | Tool | Description |
 |---|---|
-| `convert` | Convert a file path or URL to Markdown |
-| `ingest` | Batch-convert all files in a folder |
-| `doctor` | Report available capabilities |
+| `convert` | Convert a workspace file or safe remote URL to Markdown |
+| `ingest` | Batch-convert a workspace folder |
+| `doctor` | Report current capabilities and optional upgrades |
 
----
+### Resources and prompts
 
-## Optional tools
+The server also exposes:
 
-Install these to unlock richer extraction:
+- resources: `md-anything://doctor`, `md-anything://workspace-policy`
+- a workspace file resource template: `md-anything://workspace/{path}`
+- prompts: `analyze_document`, `summarize_document_chunks`
+
+### MCP safety rules
+
+The MCP surface is intentionally stricter than the CLI:
+
+- local paths must stay inside the current workspace root
+- only `http://` and `https://` URLs are allowed
+- private, localhost, and link-local URLs are blocked by default
+- set `MDA_MCP_ALLOW_PRIVATE_URLS=1` only if you intentionally want to override that safety check
+
+### Manual MCP config
+
+Cursor or Claude Desktop style config:
+
+```json
+{
+  "mcpServers": {
+    "md-anything": {
+      "command": "md-anything-mcp"
+    }
+  }
+}
+```
+
+VS Code workspace config:
+
+```json
+{
+  "servers": {
+    "md-anything": {
+      "type": "stdio",
+      "command": "md-anything-mcp"
+    }
+  }
+}
+```
+
+If you prefer `bunx`, use:
+
+```json
+{
+  "mcpServers": {
+    "md-anything": {
+      "command": "bunx",
+      "args": ["md-anything-mcp"]
+    }
+  }
+}
+```
+
+## Optional local and remote upgrades
+
+The default install stays lightweight. No models are bundled, and cloud fallbacks are opt-in.
+
+Install only what you need:
 
 ```bash
-brew install poppler        # better PDF text extraction
-brew install tesseract      # image OCR
-brew install --cask calibre # MOBI/ebook conversion
-brew install ffmpeg         # video audio extraction
-brew install whisper-cpp    # local audio/video transcription
+brew install poppler         # pdftotext for stronger PDF extraction
+brew install tesseract       # OCR for images
+brew install --cask calibre  # ebook-convert for MOBI/AZW
+brew install ffmpeg          # media extraction for video/audio workflows
+brew install whisper-cpp     # local transcription (preferred)
 whisper-cpp --download-model base.en
 ```
 
-Set `OPENROUTER_API_KEY` to enable remote fallbacks for image/audio/video (opt-in, not required).
+Also supported:
 
----
+- `unzip` for EPUB extraction
+- `whisper` (`pip install openai-whisper`) as a transcription fallback
+- `OPENROUTER_API_KEY` as an opt-in remote fallback for image, audio, and video workflows
 
-## Design principles
+Use `mda doctor` to see exactly what your machine can do right now.
 
-- **Local-first** — no cloud APIs needed for core functionality
-- **Lightweight by default** — no models bundled, zero mandatory native deps
-- **Graceful fallback** — every input produces valid output with honest metadata
-- **Agent-ready** — stable `--json` contract, MCP server, packaged `SKILL.md`
+## Why it is built this way
 
----
+- **Local-first by default**: core workflows work without cloud APIs
+- **Graceful fallback**: weak extraction still returns honest Markdown instead of a hard failure
+- **Agent-ready**: CLI JSON output, chunk/provenance metadata, and an MCP server all share the same core pipeline
+- **Lightweight**: optional tools upgrade specific formats without turning the base install into a heavyweight bundle
 
 ## Development
 
@@ -321,52 +304,41 @@ Set `OPENROUTER_API_KEY` to enable remote fallbacks for image/audio/video (opt-i
 git clone https://github.com/ojspace/md-anything
 cd md-anything
 bun install
-bun test
-bun run doctor
 ```
+
+Validate changes with:
 
 ```bash
-bun test                # full suite
-bun run test:required   # subset that passes without optional tools
-bun run test:fixtures   # regenerate binary test fixtures (PDF, EPUB)
+bun run lint
+bun run build
+bun run test:required
 ```
 
-### Project structure
+Other useful commands:
 
+```bash
+bun test
+bun run test
+bun run test:fixtures
+bun run src/cli.ts doctor
 ```
+
+### Project layout
+
+```text
 src/
-  cli.ts          # CLI entry point
-  mcp.ts          # MCP server (stdio)
-  core/           # convert, ingest, detect, finalize, usefulness
-  providers/      # one file per input type
-  formatters/     # markdown formatter
-  config/         # defaults
-  schemas/        # Zod schemas
+  cli.ts            CLI entry point
+  mcp.ts            MCP stdio server
+  mcp-support.ts    MCP path/url guardrails and structured content helpers
+  core/             shared conversion, ingest, runtime, chunks, usefulness
+  providers/        one provider per input kind
+  formatters/       final Markdown rendering
 tests/
-  unit/           # pure logic tests
-  integration/    # end-to-end conversion tests
-  fixtures/       # test input files
+  unit/
+  integration/
+  fixtures/
+  generated-fixtures/
 ```
-
-### Adding a new content type
-
-1. Add detection in `src/core/detect-input.ts`
-2. Add a provider in `src/providers/`
-3. Wire it into `src/core/route-input.ts`
-4. Set a support level in `src/core/support-levels.ts`
-5. Return a `NormalizedDocument` with honest fallback metadata
-6. Add tests in `tests/integration/`
-
----
-
-## Contributing
-
-1. Fork and branch from `main`
-2. `bun run test:required` must be green before opening a PR
-3. New input types go in `src/providers/` with a matching test in `tests/integration/`
-4. Follow the support level model: `strong` / `best-effort` / `optional`
-
----
 
 ## License
 

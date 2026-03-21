@@ -4,5 +4,6 @@ dist/
 .claude/
 *.local
 tests/generated-fixtures/
+tests/tmp-*/
 coverage/
 .DS_Store
