@@ -113,7 +113,7 @@ Options:
   -r, --recursive       Process subdirectories
   -h, --help            Show help
 
-MCP targets: claude, cursor, windsurf
+MCP targets: claude, claude-code, cursor, windsurf, vscode, opencode
 
 Need more ideas? Run: mda examples
 `);
@@ -219,16 +219,23 @@ if (command === "mcp") {
     console.error(`Usage: mda mcp install <target>
 
 Supported targets:
-  claude    — Claude Desktop (claude_desktop_config.json)
-  cursor    — Cursor (~/.cursor/mcp.json)
-  windsurf  — Windsurf (~/.codeium/windsurf/mcp_config.json)
+  claude       — Claude Desktop (claude_desktop_config.json)
+  claude-code  — Claude Code CLI (~/.claude/settings.json)
+  cursor       — Cursor (~/.cursor/mcp.json)
+  windsurf     — Windsurf (~/.codeium/windsurf/mcp_config.json)
+  vscode       — VS Code / GitHub Copilot (.vscode/mcp.json in CWD)
+  opencode     — OpenCode (~/.config/opencode/config.json)
 `);
     process.exit(1);
   }
 
-  const MCP_SERVER_CONFIG = {
-    command: "md-anything-mcp",
-    args: [] as string[],
+  const TARGET_LABELS: Record<string, string> = {
+    claude: "Claude Desktop",
+    "claude-code": "Claude Code",
+    cursor: "Cursor",
+    windsurf: "Windsurf",
+    vscode: "VS Code",
+    opencode: "OpenCode",
   };
 
   function getConfigPath(tgt: string): string {
@@ -239,9 +246,12 @@ Supported targets:
       if (os === "linux") return join(home, ".config", "Claude", "claude_desktop_config.json");
       return join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json");
     }
+    if (tgt === "claude-code") return join(home, ".claude", "settings.json");
     if (tgt === "cursor") return join(home, ".cursor", "mcp.json");
     if (tgt === "windsurf") return join(home, ".codeium", "windsurf", "mcp_config.json");
-    throw new Error(`Unknown target: ${tgt}`);
+    if (tgt === "vscode") return join(process.cwd(), ".vscode", "mcp.json");
+    if (tgt === "opencode") return join(home, ".config", "opencode", "config.json");
+    throw new Error(`Unknown target: ${tgt}. Run \`mda mcp install\` to see supported targets.`);
   }
 
   let configPath: string;
@@ -260,15 +270,30 @@ Supported targets:
     // File doesn't exist or is invalid JSON — start fresh
   }
 
-  const mcpServers = (existing.mcpServers ?? {}) as Record<string, unknown>;
-  mcpServers["md-anything"] = MCP_SERVER_CONFIG;
-  existing.mcpServers = mcpServers;
+  if (target === "vscode") {
+    // VS Code uses "servers" key with type: "stdio"
+    const servers = (existing.servers ?? {}) as Record<string, unknown>;
+    servers["md-anything"] = { type: "stdio", command: "md-anything-mcp" };
+    existing.servers = servers;
+  } else {
+    // All other targets use "mcpServers" key
+    const mcpServers = (existing.mcpServers ?? {}) as Record<string, unknown>;
+    mcpServers["md-anything"] = { command: "md-anything-mcp", args: [] };
+    existing.mcpServers = mcpServers;
+  }
 
   await mkdir(join(configPath, ".."), { recursive: true });
   await writeFile(configPath, JSON.stringify(existing, null, 2) + "\n", "utf-8");
 
+  const label = TARGET_LABELS[target] ?? target;
   console.log(`md-anything MCP server added to ${configPath}`);
-  console.log(`Restart ${target === "claude" ? "Claude Desktop" : target.charAt(0).toUpperCase() + target.slice(1)} to apply changes.`);
+  if (target === "vscode") {
+    console.log(`Open Command Palette → "MCP: List Servers" to verify in VS Code.`);
+  } else if (target === "claude-code") {
+    console.log(`Run \`claude mcp list\` to verify, or restart Claude Code.`);
+  } else {
+    console.log(`Restart ${label} to apply changes.`);
+  }
   process.exit(0);
 }
 

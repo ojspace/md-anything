@@ -20,6 +20,9 @@
     "url": "https://github.com/ojspace/md-anything.git"
   },
   "license": "MIT",
+  "engines": {
+    "bun": ">=1.0"
+  },
   "files": [
     "dist/",
     "src/",
@@ -29,9 +32,9 @@
     ".claude-plugin/"
   ],
   "bin": {
-    "mda": "./src/cli.ts",
-    "md-anything": "./src/cli.ts",
-    "md-anything-mcp": "./src/mcp.ts"
+    "mda": "./dist/cli.js",
+    "md-anything": "./dist/cli.js",
+    "md-anything-mcp": "./dist/mcp.js"
   },
   "exports": {
     ".": "./src/core/convert.ts"
@@ -45,7 +48,7 @@
     "build:bin:linux-x64": "bun build --compile --target=bun-linux-x64 src/cli.ts --outfile dist/binaries/mda-linux-x64",
     "build:bin:windows-x64": "bun build --compile --target=bun-windows-x64 src/cli.ts --outfile dist/binaries/mda-windows-x64.exe",
     "build:bin": "mkdir -p dist/binaries && bun run build:bin:macos-arm && bun run build:bin:macos-x64 && bun run build:bin:linux-x64 && bun run build:bin:windows-x64",
-    "prepublishOnly": "bun run lint && bun run test:required",
+    "prepublishOnly": "bun run build && bun run lint && bun run test:required",
     "test": "bun test",
     "test:required": "bun test tests/unit tests/integration/cli-json.test.ts tests/integration/cli-ux.test.ts tests/integration/convert-text.test.ts tests/integration/convert-image.test.ts tests/integration/ingest.test.ts tests/integration/url-fallback.test.ts tests/integration/usefulness-metadata.test.ts tests/integration/youtube-fallback.test.ts",
     "test:live": "LIVE_TESTS=1 bun test tests/integration/youtube-live.test.ts tests/integration/url-live.test.ts",

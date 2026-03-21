@@ -72,9 +72,59 @@ jobs:
             shasum -a 256 * > checksums.txt
           fi
 
+      - name: Verify checksums
+        working-directory: dist/binaries
+        run: |
+          ls -la
+          cat checksums.txt
+
       - name: Create release and upload assets
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/binaries/*
-          generate_release_notes: true
+          files: |
+            dist/binaries/mda-macos-arm64
+            dist/binaries/mda-macos-x64
+            dist/binaries/mda-linux-x64
+            dist/binaries/mda-windows-x64.exe
+            dist/binaries/checksums.txt
+          generate_release_notes: false
+          body: |
+            ## md-anything ${{ github.ref_name }}
+
+            Local-first Markdown conversion for files, URLs, and media — CLI and MCP server.
+
+            ### Install
+
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/ojspace/md-anything/main/install.sh | bash
+            ```
+
+            Or via Bun/npm (requires Bun ≥1.0):
+
+            ```bash
+            bun install -g md-anything
+            npm install -g md-anything
+            ```
+
+            ### MCP setup
+
+            ```bash
+            mda mcp install claude        # Claude Desktop
+            mda mcp install claude-code   # Claude Code CLI
+            mda mcp install cursor        # Cursor
+            mda mcp install windsurf      # Windsurf
+            mda mcp install vscode        # VS Code / GitHub Copilot
+            mda mcp install opencode      # OpenCode
+            ```
+
+            ### Binaries
+
+            | Platform | File |
+            |---|---|
+            | macOS ARM64 (Apple Silicon) | `mda-macos-arm64` |
+            | macOS x64 (Intel) | `mda-macos-x64` |
+            | Linux x64 | `mda-linux-x64` |
+            | Windows x64 | `mda-windows-x64.exe` |
+
+            SHA-256 checksums: `checksums.txt`
           fail_on_unmatched_files: true

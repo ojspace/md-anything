@@ -181,56 +181,25 @@ Argument errors stay machine-readable too:
 
 ## MCP server
 
-Run directly:
+### One-command setup
 
 ```bash
-md-anything-mcp
+mda mcp install claude        # Claude Desktop
+mda mcp install claude-code   # Claude Code CLI
+mda mcp install cursor        # Cursor
+mda mcp install windsurf      # Windsurf
+mda mcp install vscode        # VS Code + GitHub Copilot (writes .vscode/mcp.json)
+mda mcp install opencode      # OpenCode
 ```
 
-Or let the CLI wire supported clients for you:
+Restart the client after install. For VS Code, open Command Palette → `MCP: List Servers` to verify.
 
-```bash
-mda mcp install claude
-mda mcp install cursor
-mda mcp install windsurf
-```
+> **Requires Bun in PATH.** Install globally with `bun install -g md-anything` so `md-anything-mcp` is available.
+> If you used `install.sh`, only the `mda` binary is installed — use `bunx md-anything-mcp` in manual configs below.
 
-> [!NOTE]
-> `mda mcp install` assumes `md-anything-mcp` is in your `PATH`.
-> If you used the `install.sh` script, it currently only installs the `mda` binary.
-> For the MCP server, it is recommended to either install with `bun install -g md-anything`
-> or use the manual config below with `bunx`.
+### Manual config
 
-### Tools
-
-The MCP server exposes three tools:
-
-| Tool | Description |
-|---|---|
-| `convert` | Convert a workspace file or safe remote URL to Markdown |
-| `ingest` | Batch-convert a workspace folder |
-| `doctor` | Report current capabilities and optional upgrades |
-
-### Resources and prompts
-
-The server also exposes:
-
-- resources: `md-anything://doctor`, `md-anything://workspace-policy`
-- a workspace file resource template: `md-anything://workspace/{path}`
-- prompts: `analyze_document`, `summarize_document_chunks`
-
-### MCP safety rules
-
-The MCP surface is intentionally stricter than the CLI:
-
-- local paths must stay inside the current workspace root
-- only `http://` and `https://` URLs are allowed
-- private, localhost, and link-local URLs are blocked by default
-- set `MDA_MCP_ALLOW_PRIVATE_URLS=1` only if you intentionally want to override that safety check
-
-### Manual MCP config
-
-Cursor or Claude Desktop style config:
+**Claude Desktop / Claude Code / Cursor / Windsurf / OpenCode** (`mcpServers` format):
 
 ```json
 {
@@ -242,7 +211,18 @@ Cursor or Claude Desktop style config:
 }
 ```
 
-VS Code workspace config:
+Config file locations:
+
+| Client | Config path |
+|---|---|
+| Claude Desktop (macOS) | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Claude Desktop (Linux) | `~/.config/Claude/claude_desktop_config.json` |
+| Claude Code | `~/.claude/settings.json` |
+| Cursor | `~/.cursor/mcp.json` |
+| Windsurf | `~/.codeium/windsurf/mcp_config.json` |
+| OpenCode | `~/.config/opencode/config.json` |
+
+**VS Code / GitHub Copilot** — create `.vscode/mcp.json` in your workspace:
 
 ```json
 {
@@ -255,7 +235,7 @@ VS Code workspace config:
 }
 ```
 
-If you prefer `bunx`, use:
+**Using `bunx` instead of a global install:**
 
 ```json
 {
@@ -267,6 +247,23 @@ If you prefer `bunx`, use:
   }
 }
 ```
+
+### Tools
+
+| Tool | Description |
+|---|---|
+| `convert` | Convert a workspace file or safe remote URL to Markdown |
+| `ingest` | Batch-convert a workspace folder |
+| `doctor` | Report current capabilities and optional upgrades |
+
+The server also exposes resources (`md-anything://doctor`, `md-anything://workspace/{path}`) and prompts (`analyze_document`, `summarize_document_chunks`).
+
+### MCP safety rules
+
+- local paths must stay inside the current workspace root
+- only `http://` and `https://` URLs are allowed
+- private, localhost, and link-local URLs are blocked by default
+- set `MDA_MCP_ALLOW_PRIVATE_URLS=1` to override (use with caution)
 
 ## Optional local and remote upgrades
 
