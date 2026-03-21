@@ -2,8 +2,9 @@
 
 import { parseArgs } from "node:util";
 import { resolve } from "node:path";
-import { writeFile, mkdir, stat } from "node:fs/promises";
+import { writeFile, mkdir, stat, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { homedir, platform } from "node:os";
 import { convertToMarkdown } from "./core/convert";
 import { ingestFolder } from "./core/ingest";
 import { runDoctor } from "./core/doctor";
@@ -17,7 +18,7 @@ const { values, positionals } = parseArgs({
   args: Bun.argv.slice(2),
   options: {
     output: { type: "string", short: "o" },
-    frontmatter: { type: "boolean", default: true },
+    "no-frontmatter": { type: "boolean", default: false },
     json: { type: "boolean", default: false },
     recursive: { type: "boolean", short: "r", default: false },
     help: { type: "boolean", short: "h", default: false },
@@ -25,6 +26,7 @@ const { values, positionals } = parseArgs({
   allowPositionals: true,
 });
 
+const useFrontmatter = !values["no-frontmatter"];
 const command = positionals[0];
 const isConvertCommand = command === "convert";
 
@@ -90,6 +92,7 @@ Common commands:
   mda convert "https://example.com/article"
   mda ingest ./notes -o ./output -r
   mda doctor
+  mda mcp install claude
   mda examples
 
 Usage:
@@ -97,15 +100,18 @@ Usage:
   mda convert <input>
   mda ingest <folder>
   mda doctor
+  mda mcp install <target>
   mda examples
   md-anything-mcp
 
 Options:
   -o, --output <path>   Output file (convert) or directory (ingest)
-  --frontmatter         Include YAML frontmatter (default: true)
+  --no-frontmatter      Omit YAML frontmatter from output
   --json                Output JSON instead of Markdown (for agent pipelines)
   -r, --recursive       Process subdirectories
   -h, --help            Show help
+
+MCP targets: claude, cursor, windsurf
 
 Need more ideas? Run: mda examples
 `);
@@ -203,6 +209,67 @@ if (command === "examples" || command === "demo") {
   process.exit(0);
 }
 
+if (command === "mcp") {
+  const subcommand = positionals[1];
+  const target = positionals[2];
+
+  if (subcommand !== "install" || !target) {
+    console.error(`Usage: mda mcp install <target>
+
+Supported targets:
+  claude    — Claude Desktop (claude_desktop_config.json)
+  cursor    — Cursor (~/.cursor/mcp.json)
+  windsurf  — Windsurf (~/.codeium/windsurf/mcp_config.json)
+`);
+    process.exit(1);
+  }
+
+  const MCP_SERVER_CONFIG = {
+    command: "md-anything-mcp",
+    args: [] as string[],
+  };
+
+  function getConfigPath(tgt: string): string {
+    const home = homedir();
+    const os = platform();
+    if (tgt === "claude") {
+      if (os === "win32") return join(process.env.APPDATA ?? home, "Claude", "claude_desktop_config.json");
+      if (os === "linux") return join(home, ".config", "Claude", "claude_desktop_config.json");
+      return join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json");
+    }
+    if (tgt === "cursor") return join(home, ".cursor", "mcp.json");
+    if (tgt === "windsurf") return join(home, ".codeium", "windsurf", "mcp_config.json");
+    throw new Error(`Unknown target: ${tgt}`);
+  }
+
+  let configPath: string;
+  try {
+    configPath = getConfigPath(target);
+  } catch (e) {
+    console.error((e as Error).message);
+    process.exit(1);
+  }
+
+  let existing: Record<string, unknown> = {};
+  try {
+    const raw = await readFile(configPath, "utf-8");
+    existing = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    // File doesn't exist or is invalid JSON — start fresh
+  }
+
+  const mcpServers = (existing.mcpServers ?? {}) as Record<string, unknown>;
+  mcpServers["md-anything"] = MCP_SERVER_CONFIG;
+  existing.mcpServers = mcpServers;
+
+  await mkdir(join(configPath, ".."), { recursive: true });
+  await writeFile(configPath, JSON.stringify(existing, null, 2) + "\n", "utf-8");
+
+  console.log(`md-anything MCP server added to ${configPath}`);
+  console.log(`Restart ${target === "claude" ? "Claude Desktop" : target.charAt(0).toUpperCase() + target.slice(1)} to apply changes.`);
+  process.exit(0);
+}
+
 if (command === "ingest") {
   const folder = positionals[1] || ".";
   const outputDir = values.output;
@@ -219,9 +286,12 @@ if (command === "ingest") {
       docs: result.docs.map((d) => ({
         fileName: d.fileName,
         title: d.title,
+        summary: d.summary,
         sourceType: d.sourceType,
         source: d.source,
+        chunks: d.chunks,
         metadata: d.metadata,
+        provenance: d.provenance,
       })),
     });
   } else if (outputDir) {
@@ -229,7 +299,7 @@ if (command === "ingest") {
     for (const doc of result.docs) {
       const md = formatMarkdown(
         { ...doc, metadata: doc.metadata },
-        { frontmatter: values.frontmatter },
+        { frontmatter: useFrontmatter },
       );
       const outPath = join(outputDir, doc.fileName);
       await writeFile(outPath, md, "utf-8");
@@ -266,7 +336,7 @@ if (!isUrlInput(input)) {
 
 // Single file/URL conversion
 const result = await convertToMarkdown(
-  { input, options: { ...DEFAULT_CONFIG.options, frontmatter: values.frontmatter } },
+  { input, options: { ...DEFAULT_CONFIG.options, frontmatter: useFrontmatter } },
   runtime,
 );
 
@@ -284,7 +354,9 @@ if (values.json) {
     markdown: result.markdown,
     kind: result.kind,
     supportLevel: INPUT_SUPPORT_LEVELS[result.kind],
+    chunks: result.chunks,
     metadata: result.metadata,
+    provenance: result.document.provenance,
     warnings: buildConvertWarnings(input, result.kind, result.metadata),
   });
 } else {

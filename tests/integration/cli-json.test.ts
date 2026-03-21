@@ -24,6 +24,10 @@ describe("CLI JSON contract", () => {
     expect(parsed.supportLevel).toBe("strong");
     expect(typeof parsed.markdown).toBe("string");
     expect(parsed.metadata.extraction_status).toBe("ok");
+    expect(typeof parsed.metadata.document_id).toBe("string");
+    expect(typeof parsed.provenance?.documentId).toBe("string");
+    expect(Array.isArray(parsed.chunks)).toBe(true);
+    expect(parsed.chunks.length).toBeGreaterThan(0);
     expect(Array.isArray(parsed.warnings)).toBe(true);
   });
 
@@ -40,6 +44,9 @@ describe("CLI JSON contract", () => {
     expect(Array.isArray(parsed.docs)).toBe(true);
     expect(parsed.docs.length).toBeGreaterThan(0);
     expect(parsed.docs[0]?.metadata).toBeDefined();
+    expect(typeof parsed.docs[0]?.metadata?.document_id).toBe("string");
+    expect(typeof parsed.docs[0]?.provenance?.documentId).toBe("string");
+    expect(Array.isArray(parsed.docs[0]?.chunks)).toBe(true);
   });
 
   test("convert --json with missing input returns structured error", () => {

@@ -77,7 +77,11 @@ function detectStructure(rawText: string): Section[] {
       // Consecutive headings: merge into one compound heading rather than silently dropping the first
       pendingHeading = pendingHeading ? `${pendingHeading} — ${firstLine}` : firstLine;
     } else {
-      sections.push({ heading: pendingHeading, content: trimmed });
+      sections.push({
+        heading: pendingHeading,
+        content: trimmed,
+        ...(pendingHeading ? { provenance: { headingPath: [pendingHeading] } } : {}),
+      });
       pendingHeading = undefined;
     }
   }
@@ -121,10 +125,24 @@ export async function convertPdf(
     if (typeof info.CreationDate === "string") pdfMeta.created = info.CreationDate;
     if (typeof info.Subject === "string") pdfMeta.subject = info.Subject;
 
-    for (const pageText of unpdfResult.pages) {
+    for (const [pageIndex, pageText] of unpdfResult.pages.entries()) {
       if (pageText.trim().length < 10) continue;
       const hasMarkdownHeadings = /^#{1,6}\s/m.test(pageText);
-      const pageSections = hasMarkdownHeadings ? splitIntoSections(pageText) : detectStructure(pageText);
+      const pageSections = (hasMarkdownHeadings ? splitIntoSections(pageText) : detectStructure(pageText)).map(
+        (section) => ({
+          ...section,
+          provenance: {
+            ...section.provenance,
+            locator: {
+              ...section.provenance?.locator,
+              pageRange: {
+                start: pageIndex + 1,
+                end: pageIndex + 1,
+              },
+            },
+          },
+        }),
+      );
       sections.push(...pageSections);
     }
   }

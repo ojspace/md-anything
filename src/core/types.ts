@@ -13,10 +13,60 @@ export type InputKind =
   | "video"
   | "unknown";
 
+export interface PageRange {
+  start: number;
+  end: number;
+}
+
+export interface SourceLocator {
+  pageRange?: PageRange;
+}
+
+export interface SectionProvenance {
+  fragmentId?: string;
+  sectionIndex?: number;
+  headingPath?: string[];
+  locator?: SourceLocator;
+}
+
+export interface DocumentProvenance {
+  version: 1;
+  documentId: string;
+  title: string;
+  source: string;
+  sourceType: InputKind;
+  sectionCount: number;
+  chunkCount?: number;
+  extraction?: {
+    mode?: string;
+    status?: string;
+  };
+}
+
 export interface Section {
+  id?: string;
   heading?: string;
   kind?: string;
   content: string;
+  provenance?: SectionProvenance;
+}
+
+export interface ChunkProvenance {
+  chunkIndex: number;
+  sectionId: string;
+  sectionChunkIndex: number;
+  headingPath?: string[];
+  locator?: SourceLocator;
+}
+
+export interface DocumentChunk {
+  id: string;
+  sectionId: string;
+  heading?: string;
+  content: string;
+  charCount: number;
+  wordCount: number;
+  provenance: ChunkProvenance;
 }
 
 export interface NormalizedDocument {
@@ -25,14 +75,18 @@ export interface NormalizedDocument {
   sourceType: InputKind;
   summary?: string;
   sections: Section[];
+  chunks?: DocumentChunk[];
   metadata: Record<string, unknown>;
+  provenance?: DocumentProvenance;
 }
 
 export interface ConvertResult {
   input: string;
   kind: InputKind;
   markdown: string;
+  chunks: DocumentChunk[];
   metadata: Record<string, unknown>;
+  document: NormalizedDocument;
 }
 
 export interface IngestOptions {
@@ -46,7 +100,9 @@ export interface IngestDoc {
   sourceType: InputKind;
   summary?: string;
   sections: Section[];
+  chunks?: DocumentChunk[];
   metadata: Record<string, unknown>;
+  provenance?: DocumentProvenance;
 }
 
 export interface IngestResult {

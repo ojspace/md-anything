@@ -11,12 +11,18 @@ Available as a **CLI** and **MCP server**.
 ## Install
 
 ```bash
-# Global install (requires Bun)
-bun install -g md-anything
-
-# Or run without installing
-bunx md-anything <input>
+curl -fsSL https://raw.githubusercontent.com/ojspace/md-anything/main/install.sh | bash
 ```
+
+Then wire it into your AI tool in one command:
+
+```bash
+mda mcp install cursor    # Cursor
+mda mcp install claude    # Claude Desktop
+mda mcp install windsurf  # Windsurf
+```
+
+Restart your editor and the `convert`, `ingest`, and `doctor` tools are live.
 
 Verify your setup:
 
@@ -24,23 +30,49 @@ Verify your setup:
 mda doctor
 ```
 
+<details>
+<summary>Other install methods</summary>
+
+```bash
+# Global install (requires Bun)
+bun install -g md-anything
+
+# Or run without installing
+bunx md-anything <input>
+```
+
+</details>
+
 ---
 
 ## Setup with your AI tool
 
-### Claude Code
+### Cursor
 
-Add to your project's `.mcp.json`:
+```bash
+mda mcp install cursor
+```
+
+Restart Cursor — it will expose `convert`, `ingest`, and `doctor` as tools the AI can call directly.
+
+Or manually add to `~/.cursor/mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "md-anything": {
-      "command": "bunx",
-      "args": ["md-anything-mcp"]
+      "command": "md-anything-mcp"
     }
   }
 }
+```
+
+---
+
+### Claude Code
+
+```bash
+mda mcp install claude
 ```
 
 Or install the Claude Code plugin for slash commands:
@@ -57,30 +89,27 @@ Then use directly:
 /md-anything:doctor
 ```
 
----
-
-### Cursor
-
-Add to `.cursor/mcp.json` (or your global `~/.cursor/mcp.json`):
+Or add manually to your project's `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "md-anything": {
-      "command": "bunx",
-      "args": ["md-anything-mcp"]
+      "command": "md-anything-mcp"
     }
   }
 }
 ```
 
-Cursor will expose `convert`, `ingest`, and `doctor` as tools the AI can call.
-
 ---
 
 ### Windsurf
 
-Add to `~/.codeium/windsurf/mcp_config.json`:
+```bash
+mda mcp install windsurf
+```
+
+Or manually add to `~/.codeium/windsurf/mcp_config.json`:
 
 ```json
 {
@@ -222,7 +251,7 @@ mda --help
 | Flag | Default | Description |
 |---|---|---|
 | `-o, --output <path>` | stdout | Output file (convert) or directory (ingest) |
-| `--frontmatter` | `true` | Include YAML frontmatter with metadata |
+| `--no-frontmatter` | off | Omit YAML frontmatter from output |
 | `--json` | `false` | Machine-readable JSON output (for agent pipelines) |
 | `-r, --recursive` | `false` | Process subdirectories (ingest only) |
 | `-h, --help` | — | Show help |

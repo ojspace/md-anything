@@ -65,6 +65,7 @@ describe("usefulness and finalize-document", () => {
     );
     expect(result.metadata.usefulness_score).toBeDefined();
     expect(typeof result.metadata.usefulness_score).toBe("number");
+    expect(result.metadata.document_id).toBe(result.document.provenance?.documentId);
   });
 
   test("usefulness_score appears in markdown frontmatter", async () => {
@@ -73,5 +74,7 @@ describe("usefulness and finalize-document", () => {
       runtime,
     );
     expect(result.markdown).toContain("usefulness_score:");
+    expect(result.markdown).toContain("provenance_version:");
+    expect(result.markdown).toContain("chunking_strategy:");
   });
 });

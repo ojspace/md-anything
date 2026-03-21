@@ -1,21 +1,22 @@
 import type { NormalizedDocument } from "./types";
+import { attachDocumentProvenance } from "./provenance";
 import { evaluateDocumentUsefulness } from "./usefulness";
 
 export function finalizeDocument(doc: NormalizedDocument): NormalizedDocument {
   const usefulness = evaluateDocumentUsefulness(doc);
 
   if (usefulness.useful) {
-    return {
+    return attachDocumentProvenance({
       ...doc,
       metadata: {
         ...doc.metadata,
         usefulness_score: usefulness.score,
         usefulness_reasons: usefulness.reasons,
       },
-    };
+    });
   }
 
-  return {
+  return attachDocumentProvenance({
     ...doc,
     sections: [
       ...doc.sections,
@@ -31,5 +32,5 @@ export function finalizeDocument(doc: NormalizedDocument): NormalizedDocument {
       usefulness_reasons: usefulness.reasons,
       low_confidence_output: true,
     },
-  };
+  });
 }

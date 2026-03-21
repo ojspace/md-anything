@@ -18,6 +18,12 @@ describe("text conversion", () => {
     expect(result.markdown).toContain("Hello from md-anything");
     expect(result.metadata.support_level).toBe("strong");
     expect(result.metadata.extraction_status).toBe("ok");
+    expect(result.document.provenance?.documentId).toBeDefined();
+    expect(result.document.sections[0]?.id).toBeDefined();
+    expect(result.document.sections[0]?.provenance?.fragmentId).toBeDefined();
+    expect(Array.isArray(result.chunks)).toBe(true);
+    expect(result.chunks.length).toBeGreaterThan(0);
+    expect(result.metadata.chunk_count).toBe(result.chunks.length);
   });
 
   test("converts .md file to markdown (passthrough)", async () => {
@@ -40,6 +46,10 @@ describe("text conversion", () => {
     expect(result.markdown).toContain("---");
     expect(result.markdown).toContain("source_type: text");
     expect(result.markdown).toContain("extraction_status:");
+    expect(result.markdown).toContain("support_level: strong");
+    expect(result.markdown).toContain("document_id:");
+    expect(result.markdown).toContain("fragment_count:");
+    expect(result.markdown).toContain("chunk_count:");
   });
 
   test("output includes support_level in metadata", async () => {

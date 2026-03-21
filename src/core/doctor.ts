@@ -1,6 +1,7 @@
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
+import { detectCapabilities, type RuntimeCapabilities } from "./runtime";
 
 interface Capability {
   name: string;
@@ -37,7 +38,7 @@ function findWhisperCppModel(): string | null {
   return null;
 }
 
-export function runDoctor(): void {
+function buildCapabilities(): Capability[] {
   const whisperCppInstalled = checkBinary("whisper-cpp");
   const whisperCppModel = findWhisperCppModel();
   const whisperCppReady = whisperCppInstalled && whisperCppModel !== null;
@@ -49,7 +50,7 @@ export function runDoctor(): void {
   const unzipAvailable = checkBinary("unzip");
   const openRouterApiKey = process.env.OPENROUTER_API_KEY ?? null;
 
-  const capabilities: Capability[] = [
+  return [
     {
       name: "tesseract",
       available: tesseractAvailable,
@@ -107,43 +108,76 @@ export function runDoctor(): void {
         : "not set — optional remote enhancement; core workflows work without it",
     },
   ];
+}
 
-  console.log("\nmda doctor\n");
-  console.log("Lightweight default:");
-  console.log("  md-anything is useful with zero extra installs.");
-  console.log("  No models are bundled, and remote AI fallbacks are opt-in.");
-  console.log("");
-  console.log("Core capabilities (zero extra installs):");
-  console.log("  ✅ text/markdown/json/html  — strong support");
-  console.log("  ✅ url                      — strong support (fetch-based)");
-  console.log("  ✅ youtube                  — best-effort (transcript-first)");
-  console.log("  ✅ image                    — best-effort (metadata only unless upgraded)");
-  console.log("  ✅ pdf                      — strong support (unpdf + optional pdftotext)");
-  console.log("  ✅ epub                     — best-effort (native zip-based extraction)");
-  console.log("");
-  console.log("Optional local upgrades (private/offline, adds setup weight):");
+export function buildDoctorReport(capabilities = buildCapabilities()): string {
+  const lines = [
+    "mda doctor",
+    "",
+    "Lightweight default:",
+    "  md-anything is useful with zero extra installs.",
+    "  No models are bundled, and remote AI fallbacks are opt-in.",
+    "",
+    "Core capabilities (zero extra installs):",
+    "  ✅ text/markdown/json/html  — strong support",
+    "  ✅ url                      — strong support (fetch-based)",
+    "  ✅ youtube                  — best-effort (transcript-first)",
+    "  ✅ image                    — best-effort (metadata only unless upgraded)",
+    "  ✅ pdf                      — strong support (unpdf + optional pdftotext)",
+    "  ✅ epub                     — best-effort (native zip-based extraction)",
+    "",
+    "Optional local upgrades (private/offline, adds setup weight):",
+  ];
 
   for (const cap of capabilities) {
     if (cap.name === "OPENROUTER_API_KEY") continue;
     const icon = cap.available ? "✅" : "❌";
     const req = cap.required ? " (REQUIRED)" : " (optional)";
-    console.log(`  ${icon} ${cap.name.padEnd(20)} — ${cap.description}${req}`);
-    if (cap.note) console.log(`     ⚠️  ${cap.note}`);
+    lines.push(`  ${icon} ${cap.name.padEnd(20)} — ${cap.description}${req}`);
+    if (cap.note) lines.push(`     ⚠️  ${cap.note}`);
   }
 
-  console.log("");
+  lines.push("");
   const remote = capabilities.find((cap) => cap.name === "OPENROUTER_API_KEY");
   if (remote) {
-    console.log("Optional remote enhancement (opt-in):");
+    lines.push("Optional remote enhancement (opt-in):");
     const icon = remote.available ? "✅" : "❌";
-    console.log(`  ${icon} ${remote.name.padEnd(20)} — ${remote.description} (optional)`);
-    if (remote.note) console.log(`     ⚠️  ${remote.note}`);
-    console.log("");
+    lines.push(`  ${icon} ${remote.name.padEnd(20)} — ${remote.description} (optional)`);
+    if (remote.note) lines.push(`     ⚠️  ${remote.note}`);
+    lines.push("");
   }
 
-  console.log("Suggested modes:");
-  console.log("  - Lightweight mode: install nothing extra");
-  console.log("  - Local privacy mode: add tesseract / pdftotext / whisper-cpp / ffmpeg as needed");
-  console.log("  - Remote convenience mode: set OPENROUTER_API_KEY for opt-in fallbacks");
-  console.log("");
+  lines.push("Suggested modes:");
+  lines.push("  - Lightweight mode: install nothing extra");
+  lines.push("  - Local privacy mode: add tesseract / pdftotext / whisper-cpp / ffmpeg as needed");
+  lines.push("  - Remote convenience mode: set OPENROUTER_API_KEY for opt-in fallbacks");
+
+  return lines.join("\n");
+}
+
+export function buildDoctorMarkdown(caps: RuntimeCapabilities = detectCapabilities()): string {
+  const lines = [
+    "## md-anything capabilities",
+    "",
+    "### Core (always available)",
+    "- ✅ text, markdown, json, html — strong",
+    "- ✅ url — strong (fetch-based)",
+    "- ✅ youtube — best-effort (transcript-first)",
+    "- ✅ image — best-effort (metadata + optional OCR)",
+    "- ✅ pdf — strong (unpdf zero-dep + pdftotext fallback)",
+    "- ✅ epub — best-effort (native zip extraction)",
+    "- ✅ mobi — best-effort (requires ebook-convert)",
+    "",
+    "### Optional tools",
+    `${caps.hasTesseract ? "✅" : "❌"} tesseract — OCR for images`,
+    `${caps.hasPdftotext ? "✅" : "❌"} pdftotext — PDF text extraction`,
+    `${caps.hasEbookConvert ? "✅" : "❌"} ebook-convert — MOBI/ebook conversion`,
+    `${caps.hasWhisper ? "✅" : "❌"} whisper — audio/video transcription`,
+  ];
+
+  return lines.join("\n");
+}
+
+export function runDoctor(): void {
+  console.log(`\n${buildDoctorReport()}\n`);
 }

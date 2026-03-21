@@ -20,6 +20,7 @@ describe("ingestFolder", () => {
       expect(result.converted).toBe(2);
       expect(result.docs.length).toBe(2);
       expect(result.docs.every((d) => d.metadata !== undefined)).toBe(true);
+      expect(result.docs.every((d) => Array.isArray(d.chunks) && d.chunks.length > 0)).toBe(true);
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }

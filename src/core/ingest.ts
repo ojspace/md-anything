@@ -5,6 +5,8 @@ import type { RuntimeProviders } from "./runtime";
 import { detectInputKind } from "./detect-input";
 import { routeInput } from "./route-input";
 import { finalizeDocument } from "./finalize-document";
+import { attachDocumentChunks } from "./chunks";
+import { INPUT_SUPPORT_LEVELS } from "./support-levels";
 
 const SUPPORTED_KINDS = new Set<InputKind>([
   "text",
@@ -77,15 +79,24 @@ export async function ingestFolder(
       const normalized = finalizeDocument(
         await routeInput(kind, filePath, DEFAULT_OPTIONS, runtime),
       );
+      const doc = attachDocumentChunks({
+        ...normalized,
+        metadata: {
+          ...normalized.metadata,
+          support_level: INPUT_SUPPORT_LEVELS[kind],
+        },
+      });
 
       docs.push({
         fileName: sanitizeOutputName(filePath, kind),
-        title: normalized.title,
-        source: normalized.source,
-        sourceType: normalized.sourceType,
-        summary: normalized.summary,
-        sections: normalized.sections,
-        metadata: normalized.metadata,
+        title: doc.title,
+        source: doc.source,
+        sourceType: doc.sourceType,
+        summary: doc.summary,
+        sections: doc.sections,
+        chunks: doc.chunks,
+        metadata: doc.metadata,
+        provenance: doc.provenance,
       });
       converted++;
     } catch {

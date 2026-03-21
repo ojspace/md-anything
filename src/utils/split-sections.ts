@@ -10,15 +10,22 @@ const MIN_CONTENT_LENGTH = 10;
 export function splitIntoSections(markdown: string): Section[] {
   const lines = markdown.split("\n");
   const sections: Section[] = [];
+  let activeHeadingPath: string[] = [];
   let currentHeading: string | undefined;
+  let currentHeadingPath: string[] = [];
   let currentLines: string[] = [];
 
   function flush(): void {
     const content = currentLines.join("\n").trim();
     if (content.length >= MIN_CONTENT_LENGTH) {
-      sections.push({ heading: currentHeading, content });
+      sections.push({
+        heading: currentHeading,
+        content,
+        ...(currentHeadingPath.length > 0 ? { provenance: { headingPath: [...currentHeadingPath] } } : {}),
+      });
     }
     currentHeading = undefined;
+    currentHeadingPath = [];
     currentLines = [];
   }
 
@@ -26,7 +33,11 @@ export function splitIntoSections(markdown: string): Section[] {
     const headingMatch = line.match(/^(#{1,6})\s+(.+)/);
     if (headingMatch) {
       flush();
-      currentHeading = headingMatch[2].trim();
+      const level = headingMatch[1].length;
+      const headingText = headingMatch[2].trim();
+      currentHeading = headingText;
+      activeHeadingPath = [...activeHeadingPath.slice(0, Math.max(0, level - 1)), headingText];
+      currentHeadingPath = [...activeHeadingPath];
     } else {
       currentLines.push(line);
     }
