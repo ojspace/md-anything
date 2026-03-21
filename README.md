@@ -7,7 +7,7 @@ Convert files, URLs, and media into honest Markdown for terminal workflows and M
 - a local-first CLI: `mda`
 - a stdio MCP server: `md-anything-mcp`
 
-[![CI](https://github.com/ojspace/md-anything/actions/workflows/ci.yml/badge.svg)](https://github.com/ojspace/md-anything/actions/workflows/ci.yml) ![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)
+[![npm version](https://img.shields.io/npm/v/md-anything.svg)](https://www.npmjs.com/package/md-anything) [![npm downloads](https://img.shields.io/npm/dm/md-anything.svg)](https://www.npmjs.com/package/md-anything) [![CI](https://github.com/ojspace/md-anything/actions/workflows/ci.yml/badge.svg)](https://github.com/ojspace/md-anything/actions/workflows/ci.yml) [![GitHub stars](https://img.shields.io/github/stars/ojspace/md-anything.svg?style=social)](https://github.com/ojspace/md-anything/stargazers) ![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## Install
 
