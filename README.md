@@ -289,6 +289,12 @@ Also supported:
 
 Use `mda doctor` to see exactly what your machine can do right now.
 
+## Vision
+
+The goal is for md-anything to become the default open-source layer for document ingestion in agent pipelines — local-first, format-agnostic, and honest about what it can and can't extract. No SaaS lock-in, no cloud required for core workflows.
+
+Roadmap directions: DOCX/PPTX support, streaming output, semantic chunking, watch mode, Python/Go SDK wrappers.
+
 ## Why it is built this way
 
 - **Local-first by default**: core workflows work without cloud APIs
