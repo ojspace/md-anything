@@ -189,6 +189,7 @@ mda mcp install claude-code   # Claude Code CLI
 mda mcp install cursor        # Cursor
 mda mcp install windsurf      # Windsurf
 mda mcp install vscode        # VS Code + GitHub Copilot (writes .vscode/mcp.json)
+mda mcp install antigravity   # Antigravity (writes .vscode/mcp.json)
 mda mcp install opencode      # OpenCode
 ```
 
@@ -222,7 +223,7 @@ Config file locations:
 | Windsurf | `~/.codeium/windsurf/mcp_config.json` |
 | OpenCode | `~/.config/opencode/config.json` |
 
-**VS Code / GitHub Copilot** — create `.vscode/mcp.json` in your workspace:
+**VS Code / GitHub Copilot / Antigravity** — create `.vscode/mcp.json` in your workspace:
 
 ```json
 {

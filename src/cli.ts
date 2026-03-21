@@ -113,7 +113,7 @@ Options:
   -r, --recursive       Process subdirectories
   -h, --help            Show help
 
-MCP targets: claude, claude-code, cursor, windsurf, vscode, opencode
+MCP targets: claude, claude-code, cursor, windsurf, vscode, antigravity, opencode
 
 Need more ideas? Run: mda examples
 `);
@@ -224,6 +224,7 @@ Supported targets:
   cursor       — Cursor (~/.cursor/mcp.json)
   windsurf     — Windsurf (~/.codeium/windsurf/mcp_config.json)
   vscode       — VS Code / GitHub Copilot (.vscode/mcp.json in CWD)
+  antigravity  — Antigravity (.vscode/mcp.json in CWD)
   opencode     — OpenCode (~/.config/opencode/config.json)
 `);
     process.exit(1);
@@ -235,6 +236,7 @@ Supported targets:
     cursor: "Cursor",
     windsurf: "Windsurf",
     vscode: "VS Code",
+    antigravity: "Antigravity",
     opencode: "OpenCode",
   };
 
@@ -249,7 +251,7 @@ Supported targets:
     if (tgt === "claude-code") return join(home, ".claude", "settings.json");
     if (tgt === "cursor") return join(home, ".cursor", "mcp.json");
     if (tgt === "windsurf") return join(home, ".codeium", "windsurf", "mcp_config.json");
-    if (tgt === "vscode") return join(process.cwd(), ".vscode", "mcp.json");
+    if (tgt === "vscode" || tgt === "antigravity") return join(process.cwd(), ".vscode", "mcp.json");
     if (tgt === "opencode") return join(home, ".config", "opencode", "config.json");
     throw new Error(`Unknown target: ${tgt}. Run \`mda mcp install\` to see supported targets.`);
   }
@@ -270,8 +272,8 @@ Supported targets:
     // File doesn't exist or is invalid JSON — start fresh
   }
 
-  if (target === "vscode") {
-    // VS Code uses "servers" key with type: "stdio"
+  if (target === "vscode" || target === "antigravity") {
+    // VS Code and Antigravity use "servers" key with type: "stdio"
     const servers = (existing.servers ?? {}) as Record<string, unknown>;
     servers["md-anything"] = { type: "stdio", command: "md-anything-mcp" };
     existing.servers = servers;
@@ -287,7 +289,7 @@ Supported targets:
 
   const label = TARGET_LABELS[target] ?? target;
   console.log(`md-anything MCP server added to ${configPath}`);
-  if (target === "vscode") {
+  if (target === "vscode" || target === "antigravity") {
     console.log(`Open Command Palette → "MCP: List Servers" to verify in VS Code.`);
   } else if (target === "claude-code") {
     console.log(`Run \`claude mcp list\` to verify, or restart Claude Code.`);
