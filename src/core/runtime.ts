@@ -7,6 +7,7 @@ export interface RuntimeCapabilities {
   hasTesseract: boolean;
   hasPdftotext: boolean;
   hasEbookConvert: boolean;
+  hasUnzip: boolean;
   hasWhisper: boolean;
   whisperBackend: "whisper-cpp" | "whisper" | null;
   whisperCppModelPath: string | null;
@@ -68,6 +69,7 @@ export function detectCapabilities(): RuntimeCapabilities {
     hasTesseract: checkBinary("tesseract"),
     hasPdftotext: checkBinary("pdftotext"),
     hasEbookConvert: checkBinary("ebook-convert"),
+    hasUnzip: checkBinary("unzip"),
     hasWhisper: backend !== null,
     whisperBackend: backend,
     whisperCppModelPath: modelPath,

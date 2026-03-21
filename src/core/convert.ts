@@ -33,7 +33,10 @@ function buildDoctorWarnings(kind: InputKind, caps: RuntimeCapabilities): string
   if (kind === "pdf" && !caps.hasPdftotext) {
     warnings.push("pdftotext not found — PDF text extraction may be weaker. Run `mda doctor`.");
   }
-  if ((kind === "epub" || kind === "mobi") && !caps.hasEbookConvert) {
+  if (kind === "epub" && !caps.hasUnzip) {
+    warnings.push("unzip not found — EPUB extraction unavailable. Run `mda doctor`.");
+  }
+  if (kind === "mobi" && !caps.hasEbookConvert) {
     warnings.push("ebook-convert not found — ebook extraction unavailable. Run `mda doctor`.");
   }
   if ((kind === "audio" || kind === "video") && !caps.hasWhisper && !caps.openRouterApiKey) {

@@ -1,14 +1,17 @@
 import { expect, test, describe, beforeAll } from "bun:test";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
 import { convertEpub } from "../../src/providers/epub";
 import { convertToMarkdown } from "../../src/core/convert";
 import { createRuntimeProviders } from "../../src/core/runtime";
 import { DEFAULT_CONFIG } from "../../src/config/defaults";
+import type { RuntimeProviders } from "../../src/core/runtime";
 
 const runtime = createRuntimeProviders(DEFAULT_CONFIG);
 const GENERATED = join(import.meta.dir, "../generated-fixtures");
 const EPUB_PATH = join(GENERATED, "sample.epub");
+const TMP = join(import.meta.dir, "../tmp-epub-tests");
 
 describe("EPUB conversion (using generated fixture)", () => {
   beforeAll(async () => {
@@ -79,5 +82,35 @@ describe("EPUB conversion (using generated fixture)", () => {
     expect(result.metadata.support_level).toBe("best-effort");
     expect(result.markdown).toBeDefined();
     expect(result.markdown.length).toBeGreaterThan(0);
+  });
+
+  test("EPUB doctor warnings point to unzip when EPUB support is unavailable", async () => {
+    await mkdir(TMP, { recursive: true });
+    const epubPath = join(TMP, "missing-unzip.epub");
+    await writeFile(epubPath, "not a real epub");
+
+    const runtimeWithoutUnzip = {
+      capabilities: {
+        hasTesseract: false,
+        hasPdftotext: false,
+        hasEbookConvert: false,
+        hasUnzip: false,
+        hasWhisper: false,
+        whisperBackend: null,
+        whisperCppModelPath: null,
+        hasPlaywright: false,
+        openRouterApiKey: null,
+      },
+      config: DEFAULT_CONFIG,
+    } satisfies RuntimeProviders;
+
+    const result = await convertToMarkdown(
+      { input: epubPath, options: DEFAULT_CONFIG.options },
+      runtimeWithoutUnzip,
+    );
+
+    expect(Array.isArray(result.metadata.doctor_warnings)).toBe(true);
+    expect((result.metadata.doctor_warnings as string[])[0]).toContain("unzip not found");
+    expect((result.metadata.doctor_warnings as string[])[0]).not.toContain("ebook-convert");
   });
 });
