@@ -8,6 +8,7 @@ export interface RuntimeCapabilities {
   hasPdftotext: boolean;
   hasEbookConvert: boolean;
   hasUnzip: boolean;
+  hasFfmpeg: boolean;
   hasWhisper: boolean;
   whisperBackend: "whisper-cpp" | "whisper" | null;
   whisperCppModelPath: string | null;
@@ -70,6 +71,7 @@ export function detectCapabilities(): RuntimeCapabilities {
     hasPdftotext: checkBinary("pdftotext"),
     hasEbookConvert: checkBinary("ebook-convert"),
     hasUnzip: checkBinary("unzip"),
+    hasFfmpeg: checkBinary("ffmpeg"),
     hasWhisper: backend !== null,
     whisperBackend: backend,
     whisperCppModelPath: modelPath,

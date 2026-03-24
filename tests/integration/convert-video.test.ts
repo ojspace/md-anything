@@ -24,7 +24,7 @@ describe("video conversion (baseline, no whisper/ffmpeg required)", () => {
     const videoPath = join(TMP, "test-video.mp4");
     await writeFile(videoPath, Buffer.alloc(100));
 
-    const doc = await convertVideo(videoPath, null, null, null);
+    const doc = await convertVideo(videoPath, null, null, false, null);
 
     expect(doc.sourceType).toBe("video");
     expect(doc.title).toBe("test-video.mp4");
@@ -40,7 +40,7 @@ describe("video conversion (baseline, no whisper/ffmpeg required)", () => {
     const videoPath = join(TMP, "test-video-2.mov");
     await writeFile(videoPath, Buffer.alloc(4096));
 
-    const doc = await convertVideo(videoPath, null, null, null);
+    const doc = await convertVideo(videoPath, null, null, false, null);
 
     expect(doc.metadata.file_name).toBe("test-video-2.mov");
     expect(doc.metadata.file_size_bytes).toBe(4096);
@@ -54,7 +54,7 @@ describe("video conversion (baseline, no whisper/ffmpeg required)", () => {
     const videoPath = join(TMP, "no-tools.mp4");
     await writeFile(videoPath, Buffer.alloc(100));
 
-    const doc = await convertVideo(videoPath, null, null, null);
+    const doc = await convertVideo(videoPath, null, null, false, null);
 
     expect(doc.sections[0].content).toContain("Video transcription requires");
     // ffmpeg may or may not be installed on the test machine
@@ -72,7 +72,7 @@ describe("video conversion (baseline, no whisper/ffmpeg required)", () => {
     const videoPath = join(TMP, "no-key.mp4");
     await writeFile(videoPath, Buffer.alloc(100));
 
-    const doc = await convertVideo(videoPath, null, null, null);
+    const doc = await convertVideo(videoPath, null, null, false, null);
 
     expect(doc.sections[0].content).toContain("OPENROUTER_API_KEY");
     expect(doc.sections[0].content).toContain("Healer Alpha");

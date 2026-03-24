@@ -24,13 +24,14 @@ describe("audio conversion (baseline, no whisper required)", () => {
     const audioPath = join(TMP, "test-audio.mp3");
     await writeFile(audioPath, Buffer.alloc(100));
 
-    const doc = await convertAudio(audioPath, null, null, null);
+    const doc = await convertAudio(audioPath, null, null, false, null);
 
     expect(doc.sourceType).toBe("audio");
     expect(doc.title).toBe("test-audio.mp3");
     expect(doc.metadata.extraction).toBe("unavailable");
     expect(doc.metadata.extraction_status).toBe("weak");
     expect(doc.metadata.whisper_available).toBe(false);
+    expect(doc.metadata.ffmpeg_available).toBe(false);
     expect(doc.metadata.low_confidence_output).toBe(true);
     expect(doc.sections.length).toBe(1);
     expect(doc.sections[0].content).toContain("Audio transcription requires");
@@ -43,7 +44,7 @@ describe("audio conversion (baseline, no whisper required)", () => {
     const audioPath = join(TMP, "test-audio-2.mp3");
     await writeFile(audioPath, Buffer.alloc(100));
 
-    const doc = await convertAudio(audioPath, "whisper-cpp", null, null);
+    const doc = await convertAudio(audioPath, "whisper-cpp", null, false, null);
 
     expect(doc.sourceType).toBe("audio");
     expect(doc.metadata.whisper_available).toBe(true);
@@ -58,7 +59,7 @@ describe("audio conversion (baseline, no whisper required)", () => {
     const audioPath = join(TMP, "test-audio-3.wav");
     await writeFile(audioPath, Buffer.alloc(2048));
 
-    const doc = await convertAudio(audioPath, null, null, null);
+    const doc = await convertAudio(audioPath, null, null, false, null);
 
     expect(doc.metadata.file_name).toBe("test-audio-3.wav");
     expect(doc.metadata.file_size_bytes).toBe(2048);
@@ -70,12 +71,26 @@ describe("audio conversion (baseline, no whisper required)", () => {
     const audioPath = join(TMP, "no-tools.mp3");
     await writeFile(audioPath, Buffer.alloc(100));
 
-    const doc = await convertAudio(audioPath, null, null, null);
+    const doc = await convertAudio(audioPath, null, null, false, null);
 
     expect(doc.sections[0].content).toContain("brew install whisper-cpp");
     expect(doc.sections[0].content).toContain("whisper-cpp --download-model base.en");
     expect(doc.sections[0].content).toContain("OPENROUTER_API_KEY");
     expect(doc.sections[0].content).toContain("mda doctor");
+  });
+
+  test("explains ffmpeg is required when using python whisper", async () => {
+    await setup();
+    const audioPath = join(TMP, "python-whisper-no-ffmpeg.mp3");
+    await writeFile(audioPath, Buffer.alloc(100));
+
+    const doc = await convertAudio(audioPath, "whisper", null, false, null);
+
+    expect(doc.metadata.extraction).toBe("unavailable");
+    expect(doc.metadata.whisper_available).toBe(true);
+    expect(doc.metadata.ffmpeg_available).toBe(false);
+    expect(doc.sections[0].content).toContain("ffmpeg is missing");
+    expect(doc.sections[0].content).toContain("brew install ffmpeg");
   });
 
   test("audio conversion through pipeline", async () => {

@@ -6,15 +6,6 @@ import { tmpdir } from "node:os";
 import type { NormalizedDocument } from "../core/types";
 import { transcribeAudioWithHealer } from "./openrouter-client";
 
-function hasFfmpeg(): boolean {
-  try {
-    const result = spawnSync("which", ["ffmpeg"], { stdio: "ignore" });
-    return result.status === 0;
-  } catch {
-    return false;
-  }
-}
-
 async function extractAudio(filePath: string): Promise<{ audioPath: string; tmpDir: string } | null> {
   const tmpDir = await mkdtemp(join(tmpdir(), "md-anything-video-"));
   const audioPath = join(tmpDir, "audio.wav");
@@ -71,6 +62,7 @@ export async function convertVideo(
   filePath: string,
   whisperBackend: "whisper-cpp" | "whisper" | null,
   whisperCppModelPath: string | null,
+  hasFfmpeg: boolean,
   openRouterApiKey: string | null = null,
 ): Promise<NormalizedDocument> {
   const name = basename(filePath);
@@ -84,10 +76,8 @@ export async function convertVideo(
     // ignore
   }
 
-  const ffmpegAvailable = hasFfmpeg();
-
   // Prefer local whisper (private, offline, no API key needed)
-  if (whisperBackend && ffmpegAvailable) {
+  if (whisperBackend && hasFfmpeg) {
     const extracted = await extractAudio(filePath);
     if (extracted) {
       const { audioPath, tmpDir } = extracted;
@@ -119,7 +109,7 @@ export async function convertVideo(
   }
 
   // Fallback: OpenRouter Healer Alpha (free, native audio/video understanding)
-  if (openRouterApiKey && ffmpegAvailable) {
+  if (openRouterApiKey && hasFfmpeg) {
     const extracted = await extractAudio(filePath);
     if (extracted) {
       const { audioPath, tmpDir } = extracted;
@@ -149,7 +139,7 @@ export async function convertVideo(
     }
   }
 
-  if (whisperBackend && ffmpegAvailable) {
+  if (whisperBackend && hasFfmpeg) {
     // Tools available but produced no output
     return {
       title: name,
@@ -179,7 +169,7 @@ export async function convertVideo(
 
   const missing = [];
   if (!whisperBackend) missing.push("`brew install whisper-cpp` then `whisper-cpp --download-model base.en`");
-  if (!ffmpegAvailable) missing.push("`brew install ffmpeg`");
+  if (!hasFfmpeg) missing.push("`brew install ffmpeg`");
   const apiNote = !openRouterApiKey
     ? "\n\n**Alternative (free API):** Set `OPENROUTER_API_KEY` — uses Healer Alpha, no local install needed (still requires ffmpeg)"
     : "";
@@ -205,7 +195,7 @@ export async function convertVideo(
       file_size_bytes: fileSize,
       format: ext,
       whisper_available: whisperBackend !== null,
-      ffmpeg_available: ffmpegAvailable,
+      ffmpeg_available: hasFfmpeg,
       low_confidence_output: true,
     },
   };

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-03-24
+
+### Fixed
+- Prevented ingest output filename collisions by deduplicating generated Markdown file names.
+- Centralized `ffmpeg` runtime capability detection and propagated it through audio/video conversion paths.
+- Improved audio fallback guidance when Python Whisper is present but `ffmpeg` is missing.
+- Added Bun typings to `tsconfig.json` so the published release passes the repo lint gate.
+
+### Changed
+- Tightened npm package contents to ship only the built CLI and MCP entrypoints from `dist/`.
+- Cleaned the build step so stale `dist` artifacts do not leak into npm publishes.
+
 ## [0.2.0] - 2026-01-15
 
 ### Added

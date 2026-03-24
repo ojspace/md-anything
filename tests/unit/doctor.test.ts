@@ -8,6 +8,7 @@ describe("doctor markdown", () => {
       hasPdftotext: false,
       hasEbookConvert: false,
       hasUnzip: false,
+      hasFfmpeg: false,
       hasWhisper: false,
       whisperBackend: null,
       whisperCppModelPath: null,
@@ -17,5 +18,6 @@ describe("doctor markdown", () => {
 
     expect(markdown).toContain("unzip — EPUB extraction");
     expect(markdown).toContain("ebook-convert — MOBI/ebook conversion");
+    expect(markdown).toContain("ffmpeg — media extraction for transcription");
   });
 });

@@ -143,6 +143,7 @@ export function buildDoctorMarkdown(caps: RuntimeCapabilities = detectCapabiliti
     `${caps.hasPdftotext ? "✅" : "❌"} pdftotext — PDF text extraction`,
     `${caps.hasUnzip ? "✅" : "❌"} unzip — EPUB extraction`,
     `${caps.hasEbookConvert ? "✅" : "❌"} ebook-convert — MOBI/ebook conversion`,
+    `${caps.hasFfmpeg ? "✅" : "❌"} ffmpeg — media extraction for transcription`,
     `${caps.hasWhisper ? "✅" : "❌"} whisper — audio/video transcription`,
   ];
 

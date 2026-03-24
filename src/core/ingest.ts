@@ -1,5 +1,5 @@
 import { readdir, stat } from "node:fs/promises";
-import { join, basename, extname } from "node:path";
+import { join, basename, extname, parse } from "node:path";
 import type { IngestOptions, IngestDoc, IngestResult, InputKind } from "./types";
 import type { RuntimeProviders } from "./runtime";
 import { detectInputKind } from "./detect-input";
@@ -38,6 +38,25 @@ function sanitizeOutputName(input: string, kind: string): string {
   return `${basename(input, extname(input))}.md`;
 }
 
+function reserveUniqueOutputName(candidate: string, usedNames: Set<string>): string {
+  if (!usedNames.has(candidate)) {
+    usedNames.add(candidate);
+    return candidate;
+  }
+
+  const parsed = parse(candidate);
+  let suffix = 2;
+  let nextCandidate = `${parsed.name}-${suffix}${parsed.ext}`;
+
+  while (usedNames.has(nextCandidate)) {
+    suffix += 1;
+    nextCandidate = `${parsed.name}-${suffix}${parsed.ext}`;
+  }
+
+  usedNames.add(nextCandidate);
+  return nextCandidate;
+}
+
 const DEFAULT_OPTIONS = {
   mode: "balanced" as const,
   summary: true,
@@ -53,6 +72,7 @@ export async function ingestFolder(
   options: IngestOptions = {},
 ): Promise<IngestResult> {
   const docs: IngestDoc[] = [];
+  const usedOutputNames = new Set<string>();
   let converted = 0;
   let skipped = 0;
   let failed = 0;
@@ -88,7 +108,7 @@ export async function ingestFolder(
       });
 
       docs.push({
-        fileName: sanitizeOutputName(filePath, kind),
+        fileName: reserveUniqueOutputName(sanitizeOutputName(filePath, kind), usedOutputNames),
         title: doc.title,
         source: doc.source,
         sourceType: doc.sourceType,

@@ -42,6 +42,12 @@ function buildDoctorWarnings(kind: InputKind, caps: RuntimeCapabilities): string
   if ((kind === "audio" || kind === "video") && !caps.hasWhisper && !caps.openRouterApiKey) {
     warnings.push("whisper-cpp not found — audio transcription unavailable. Run `mda doctor`.");
   }
+  if (kind === "video" && !caps.hasFfmpeg) {
+    warnings.push("ffmpeg not found — video transcription unavailable. Run `mda doctor`.");
+  }
+  if (kind === "audio" && caps.whisperBackend === "whisper" && !caps.hasFfmpeg) {
+    warnings.push("ffmpeg not found — python whisper audio transcription is unavailable. Run `mda doctor`.");
+  }
   return warnings;
 }
 

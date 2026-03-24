@@ -95,6 +95,7 @@ describe("EPUB conversion (using generated fixture)", () => {
         hasPdftotext: false,
         hasEbookConvert: false,
         hasUnzip: false,
+        hasFfmpeg: false,
         hasWhisper: false,
         whisperBackend: null,
         whisperCppModelPath: null,

@@ -1,6 +1,6 @@
 import { expect, test, describe } from "bun:test";
 import { join } from "node:path";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { ingestFolder } from "../../src/core/ingest";
 import { DEFAULT_CONFIG } from "../../src/config/defaults";
@@ -37,6 +37,23 @@ describe("ingestFolder", () => {
       expect(typeof result.skipped).toBe("number");
       expect(typeof result.failed).toBe("number");
       expect(Array.isArray(result.docs)).toBe(true);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  test("deduplicates output file names for colliding basenames", async () => {
+    const tmpDir = await mkdtemp(join(tmpdir(), "md-anything-ingest-collisions-"));
+    try {
+      const nestedDir = join(tmpDir, "nested");
+      await mkdir(nestedDir, { recursive: true });
+      await writeFile(join(tmpDir, "notes.txt"), "Top level content that is long enough to convert.");
+      await writeFile(join(nestedDir, "notes.md"), "# Nested\n\nNested content that is also long enough.");
+
+      const result = await ingestFolder(tmpDir, runtime, { recursive: true });
+      const fileNames = result.docs.map((doc) => doc.fileName).sort();
+
+      expect(fileNames).toEqual(["notes-2.md", "notes.md"]);
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }

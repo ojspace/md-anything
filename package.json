@@ -1,6 +1,6 @@
 {
   "name": "md-anything",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Local-first Markdown conversion for files, webpages, and media — CLI and MCP",
   "type": "module",
   "keywords": [
@@ -17,14 +17,15 @@
   "homepage": "https://github.com/ojspace/md-anything",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ojspace/md-anything.git"
+    "url": "git+https://github.com/ojspace/md-anything.git"
   },
   "license": "MIT",
   "engines": {
     "bun": ">=1.0"
   },
   "files": [
-    "dist/",
+    "dist/cli.js",
+    "dist/mcp.js",
     "src/",
     "README.md",
     "LICENSE",
@@ -32,9 +33,9 @@
     ".claude-plugin/"
   ],
   "bin": {
-    "mda": "./dist/cli.js",
-    "md-anything": "./dist/cli.js",
-    "md-anything-mcp": "./dist/mcp.js"
+    "mda": "dist/cli.js",
+    "md-anything": "dist/cli.js",
+    "md-anything-mcp": "dist/mcp.js"
   },
   "exports": {
     ".": "./src/core/convert.ts"
@@ -42,7 +43,7 @@
   "scripts": {
     "dev": "bun run src/cli.ts",
     "mcp": "bun run src/mcp.ts",
-    "build": "bun build src/cli.ts src/mcp.ts --outdir dist --target bun",
+    "build": "bun -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });\" && bun build src/cli.ts src/mcp.ts --outdir dist --target bun",
     "build:bin:macos-arm": "bun build --compile --target=bun-darwin-arm64 src/cli.ts --outfile dist/binaries/mda-macos-arm64",
     "build:bin:macos-x64": "bun build --compile --target=bun-darwin-x64 src/cli.ts --outfile dist/binaries/mda-macos-x64",
     "build:bin:linux-x64": "bun build --compile --target=bun-linux-x64 src/cli.ts --outfile dist/binaries/mda-linux-x64",

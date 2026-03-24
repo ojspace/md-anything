@@ -51,6 +51,7 @@ export async function convertAudio(
   filePath: string,
   whisperBackend: "whisper-cpp" | "whisper" | null,
   whisperCppModelPath: string | null,
+  hasFfmpeg: boolean,
   openRouterApiKey: string | null = null,
 ): Promise<NormalizedDocument> {
   const name = basename(filePath);
@@ -64,8 +65,10 @@ export async function convertAudio(
     // ignore
   }
 
+  const localWhisperAvailable = whisperBackend !== null && (whisperBackend !== "whisper" || hasFfmpeg);
+
   // Prefer local whisper (private, offline, no API key needed)
-  if (whisperBackend) {
+  if (localWhisperAvailable && whisperBackend) {
     const transcript =
       whisperBackend === "whisper-cpp" && whisperCppModelPath
         ? await runWhisperCpp(filePath, whisperCppModelPath)
@@ -85,6 +88,7 @@ export async function convertAudio(
           format: ext,
           whisper_available: true,
           whisper_backend: whisperBackend,
+          ffmpeg_available: hasFfmpeg,
           transcript_length: transcript.length,
         },
       };
@@ -113,7 +117,39 @@ export async function convertAudio(
     }
   }
 
-  if (whisperBackend) {
+  if (!localWhisperAvailable && whisperBackend === "whisper") {
+    return {
+      title: name,
+      source: filePath,
+      sourceType: "audio",
+      sections: [
+        {
+          heading: "Audio File",
+          kind: "fallback",
+          content:
+            `*File: ${name}*\n\nPython Whisper is available, but ffmpeg is missing so local transcription cannot run.\n\n` +
+            "**Install:** `brew install ffmpeg`\n\n" +
+            (openRouterApiKey
+              ? "Or keep using the configured `OPENROUTER_API_KEY` remote fallback.\n\n"
+              : "**Alternative (free API):** Set `OPENROUTER_API_KEY` for the opt-in remote fallback.\n\n") +
+            "Then run `mda doctor` to confirm the transcription tools are available.",
+        },
+      ],
+      metadata: {
+        extraction: "unavailable",
+        extraction_status: "weak",
+        file_name: name,
+        file_size_bytes: fileSize,
+        format: ext,
+        whisper_available: true,
+        whisper_backend: whisperBackend,
+        ffmpeg_available: false,
+        low_confidence_output: true,
+      },
+    };
+  }
+
+  if (localWhisperAvailable && whisperBackend) {
     // Whisper ran but produced nothing
     return {
       title: name,
@@ -135,6 +171,7 @@ export async function convertAudio(
         file_size_bytes: fileSize,
         format: ext,
         whisper_available: true,
+        ffmpeg_available: hasFfmpeg,
         whisper_backend: whisperBackend,
       },
     };
@@ -162,6 +199,7 @@ export async function convertAudio(
       file_size_bytes: fileSize,
       format: ext,
       whisper_available: false,
+      ffmpeg_available: hasFfmpeg,
       low_confidence_output: true,
     },
   };
