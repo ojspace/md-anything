@@ -11,6 +11,9 @@ export type InputKind =
   | "mobi"
   | "audio"
   | "video"
+  | "code"
+  | "docx"
+  | "pptx"
   | "unknown";
 
 export interface PageRange {

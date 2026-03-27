@@ -100,6 +100,8 @@ describe("EPUB conversion (using generated fixture)", () => {
         whisperBackend: null,
         whisperCppModelPath: null,
         hasPlaywright: false,
+        hasPandoc: false,
+        hasLibreOffice: false,
         openRouterApiKey: null,
       },
       config: DEFAULT_CONFIG,

@@ -10,6 +10,9 @@ import { convertMobi } from "../providers/mobi";
 import { convertYoutube } from "../providers/youtube";
 import { convertAudio } from "../providers/audio";
 import { convertVideo } from "../providers/video";
+import { convertCode } from "../providers/code";
+import { convertDocx } from "../providers/docx";
+import { convertPptx } from "../providers/pptx";
 
 export async function routeInput(
   kind: InputKind,
@@ -56,6 +59,12 @@ export async function routeInput(
         caps.hasFfmpeg,
         caps.openRouterApiKey,
       );
+    case "code":
+      return convertCode(input);
+    case "docx":
+      return convertDocx(input);
+    case "pptx":
+      return convertPptx(input, caps.hasPandoc, caps.hasLibreOffice);
     default:
       return {
         title: input,

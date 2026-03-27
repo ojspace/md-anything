@@ -92,6 +92,46 @@ function detectStructure(rawText: string): Section[] {
   return sections.filter((s) => s.content.length > 0);
 }
 
+// --- Header/footer stripping ---
+
+/**
+ * Detects lines that appear verbatim across many pages (running headers/footers)
+ * and removes them. Only applied when there are enough pages to detect the pattern.
+ */
+function stripRunningHeadersFooters(pages: string[]): string[] {
+  const nonEmpty = pages.filter((p) => p.trim().length > 0);
+  if (nonEmpty.length < 4) return pages;
+
+  // Count how many pages each trimmed line appears on (deduplicated per page)
+  const lineFreq = new Map<string, number>();
+  for (const page of nonEmpty) {
+    const seen = new Set(
+      page
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.length > 3 && l.length < 120),
+    );
+    for (const line of seen) {
+      lineFreq.set(line, (lineFreq.get(line) ?? 0) + 1);
+    }
+  }
+
+  // Lines on ≥60% of pages are likely boilerplate
+  const threshold = Math.ceil(nonEmpty.length * 0.6);
+  const boilerplate = new Set(
+    [...lineFreq.entries()].filter(([, count]) => count >= threshold).map(([line]) => line),
+  );
+
+  if (boilerplate.size === 0) return pages;
+
+  return pages.map((page) =>
+    page
+      .split("\n")
+      .filter((line) => !boilerplate.has(line.trim()))
+      .join("\n"),
+  );
+}
+
 // --- Main converter ---
 
 export async function convertPdf(
@@ -127,7 +167,9 @@ export async function convertPdf(
     if (typeof info.CreationDate === "string") pdfMeta.created = info.CreationDate;
     if (typeof info.Subject === "string") pdfMeta.subject = info.Subject;
 
-    for (const [pageIndex, pageText] of unpdfResult.pages.entries()) {
+    const cleanedPages = stripRunningHeadersFooters(unpdfResult.pages);
+
+    for (const [pageIndex, pageText] of cleanedPages.entries()) {
       if (pageText.trim().length < 10) continue;
       const hasMarkdownHeadings = /^#{1,6}\s/m.test(pageText);
       const pageSections = (hasMarkdownHeadings ? splitIntoSections(pageText) : detectStructure(pageText)).map(

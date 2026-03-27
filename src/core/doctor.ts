@@ -18,6 +18,8 @@ function buildCapabilities(): Capability[] {
   const pdftotextAvailable = checkBinary("pdftotext");
   const ebookConvertAvailable = checkBinary("ebook-convert");
   const unzipAvailable = checkBinary("unzip");
+  const pandocAvailable = checkBinary("pandoc");
+  const libreOfficeAvailable = checkBinary("soffice") || checkBinary("libreoffice");
   const openRouterApiKey = process.env.OPENROUTER_API_KEY ?? null;
 
   return [
@@ -39,6 +41,18 @@ function buildCapabilities(): Capability[] {
       name: "ebook-convert",
       available: ebookConvertAvailable,
       description: "MOBI/ebook conversion (Calibre)",
+      required: false,
+    },
+    {
+      name: "pandoc",
+      available: pandocAvailable,
+      description: "PPTX/presentation conversion (brew install pandoc)",
+      required: false,
+    },
+    {
+      name: "libreoffice",
+      available: libreOfficeAvailable,
+      description: "PPTX fallback conversion (brew install --cask libreoffice)",
       required: false,
     },
     {
@@ -95,6 +109,9 @@ export function buildDoctorReport(capabilities = buildCapabilities()): string {
     "  ✅ image                    — best-effort (metadata only unless upgraded)",
     "  ✅ pdf                      — strong support (unpdf + optional pdftotext)",
     "  ✅ epub                     — best-effort (unzip-based extraction)",
+    "  ✅ docx                     — strong support (mammoth, zero-dep)",
+    "  ✅ code/source files        — strong support (50+ languages → fenced blocks)",
+    "  ✅ pptx                     — best-effort (requires pandoc or libreoffice)",
     "",
     "Optional local upgrades (private/offline, adds setup weight):",
   ];
@@ -137,12 +154,17 @@ export function buildDoctorMarkdown(caps: RuntimeCapabilities = detectCapabiliti
     "- ✅ pdf — strong (unpdf zero-dep + pdftotext fallback)",
     "- ✅ epub — best-effort (unzip-based extraction)",
     "- ✅ mobi — best-effort (requires ebook-convert)",
+    "- ✅ docx — strong (mammoth, zero additional dependencies)",
+    "- ✅ code/source files — strong (50+ languages, fenced markdown output)",
+    `${caps.hasPandoc || caps.hasLibreOffice ? "✅" : "❌"} pptx — best-effort (pandoc: ${caps.hasPandoc ? "✅" : "❌"}, libreoffice: ${caps.hasLibreOffice ? "✅" : "❌"})`,
     "",
     "### Optional tools",
     `${caps.hasTesseract ? "✅" : "❌"} tesseract — OCR for images`,
     `${caps.hasPdftotext ? "✅" : "❌"} pdftotext — PDF text extraction`,
     `${caps.hasUnzip ? "✅" : "❌"} unzip — EPUB extraction`,
     `${caps.hasEbookConvert ? "✅" : "❌"} ebook-convert — MOBI/ebook conversion`,
+    `${caps.hasPandoc ? "✅" : "❌"} pandoc — PPTX conversion (brew install pandoc)`,
+    `${caps.hasLibreOffice ? "✅" : "❌"} libreoffice — PPTX fallback (brew install --cask libreoffice)`,
     `${caps.hasFfmpeg ? "✅" : "❌"} ffmpeg — media extraction for transcription`,
     `${caps.hasWhisper ? "✅" : "❌"} whisper — audio/video transcription`,
   ];

@@ -15,5 +15,8 @@ export const INPUT_SUPPORT_LEVELS: Record<InputKind, SupportLevel> = {
   mobi: "best-effort",
   audio: "optional",
   video: "optional",
+  code: "strong",
+  docx: "strong",
+  pptx: "best-effort",
   unknown: "optional",
 };

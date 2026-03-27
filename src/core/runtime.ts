@@ -13,6 +13,8 @@ export interface RuntimeCapabilities {
   whisperBackend: "whisper-cpp" | "whisper" | null;
   whisperCppModelPath: string | null;
   hasPlaywright: boolean;
+  hasPandoc: boolean;
+  hasLibreOffice: boolean;
   openRouterApiKey: string | null;
 }
 
@@ -83,6 +85,8 @@ export function detectCapabilities(): RuntimeCapabilities {
         return false;
       }
     })(),
+    hasPandoc: checkBinary("pandoc"),
+    hasLibreOffice: checkBinary("soffice") || checkBinary("libreoffice"),
     openRouterApiKey: process.env.OPENROUTER_API_KEY ?? null,
   };
 }

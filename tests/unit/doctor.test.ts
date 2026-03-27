@@ -13,6 +13,8 @@ describe("doctor markdown", () => {
       whisperBackend: null,
       whisperCppModelPath: null,
       hasPlaywright: false,
+      hasPandoc: false,
+      hasLibreOffice: false,
       openRouterApiKey: null,
     });
 

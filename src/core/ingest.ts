@@ -21,6 +21,9 @@ const SUPPORTED_KINDS = new Set<InputKind>([
   "mobi",
   "audio",
   "video",
+  "code",
+  "docx",
+  "pptx",
 ]);
 
 function sanitizeOutputName(input: string, kind: string): string {

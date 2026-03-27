@@ -22,6 +22,9 @@ const MIME_TYPES: Record<InputKind, string> = {
   mobi: "application/x-mobipocket-ebook",
   audio: "audio/*",
   video: "video/*",
+  code: "text/plain",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   unknown: "application/octet-stream",
 };
 
